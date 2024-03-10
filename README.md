@@ -1,1 +1,1 @@
-# filtering-and-edge-detection
+# Image Filtering and Edge Detection Desktop App
