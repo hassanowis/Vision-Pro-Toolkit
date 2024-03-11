@@ -19,7 +19,7 @@ from PyQt5.QtWidgets import (
     QSizePolicy,
 )
 from PyQt5.uic import loadUiType
-# from image import Image
+from image import Image
 # from imageMixer import ImageMixer
 # from overlay import overlay
 
@@ -32,7 +32,20 @@ class MainApp(QMainWindow, FORM_CLASS):
         super().__init__()
         QMainWindow.__init__(self)
         self.setupUi(self)
-        
+    def import_image(self):
+          """
+          Browse and open an image file.
+
+          """
+
+          image_path, _ = QFileDialog.getOpenFileName(
+            self, "Open Image", "", "Image Files (*.jpg *.gif *.png *.jpeg *.svg)"
+          )
+          if image_path:
+            self.image = Image(image_path)
+            self.image.load_image()
+          
+          
 def main():
     """
     Main method to start the application.
