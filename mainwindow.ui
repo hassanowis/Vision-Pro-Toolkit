@@ -86,16 +86,16 @@
         <item>
          <layout class="QGridLayout" name="gridLayout_2">
           <item row="0" column="0">
-           <widget class="PlotWidgey" name="graphicsView_2"/>
+           <widget class="PlotWidget" name="graphicsView_2"/>
           </item>
           <item row="0" column="1">
-           <widget class="PlotWidgey" name="graphicsView_3"/>
+           <widget class="PlotWidget" name="graphicsView_3"/>
           </item>
           <item row="1" column="0">
-           <widget class="PlotWidgey" name="graphicsView_4"/>
+           <widget class="PlotWidget" name="graphicsView_4"/>
           </item>
           <item row="1" column="1">
-           <widget class="PlotWidgey" name="graphicsView"/>
+           <widget class="PlotWidget" name="graphicsView"/>
           </item>
          </layout>
         </item>
@@ -350,7 +350,7 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>PlotWidgey</class>
+   <class>PlotWidget</class>
    <extends>QGraphicsView</extends>
    <header location="global">pyqtgraph</header>
   </customwidget>

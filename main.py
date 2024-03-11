@@ -19,7 +19,7 @@ from PyQt5.QtWidgets import (
     QSizePolicy,
 )
 from PyQt5.uic import loadUiType
-from image import Image
+# from image import Image
 # from imageMixer import ImageMixer
 # from overlay import overlay
 
