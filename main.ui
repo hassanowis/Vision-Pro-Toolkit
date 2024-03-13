@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1058</width>
-    <height>797</height>
+    <width>852</width>
+    <height>757</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -188,21 +188,6 @@
                 </item>
                 <item>
                  <property name="text">
-                  <string>Canny</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Laplacian</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Sobel</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
                   <string>Average</string>
                  </property>
                 </item>
@@ -348,7 +333,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1058</width>
+     <width>852</width>
      <height>21</height>
     </rect>
    </property>

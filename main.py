@@ -117,28 +117,22 @@ class MainApp(QMainWindow, FORM_CLASS):
             self.image['result'] = self.add_gaussian_noise(self.image['gray'])
         elif self.image['Noise'] == 'Uniform':
             self.image['result'] = cv2.blur(self.image['gray'], (7, 7))
-        elif self.image['Noise'] == 'Salt & Pepper':
-            self.image['result'] = self.add_salt_and_pepper_noise(self.image['gray'])
+        elif self.image['Noise'] == 'Salt and Pepper':
+            self.image['result'] = self.add_salt_and_pepper(self.image['gray'])
 
         # Apply filter
         if self.image['Filter'] == 'None':
             self.image['result'] = self.image['result']
-        elif self.image['Filter'] == 'Sobel':
-            self.image['result'] = cv2.Sobel(self.image['result'], cv2.CV_64F, 1, 0, ksize=5)
-        elif self.image['Filter'] == 'Laplacian':
-            self.image['result'] = cv2.Laplacian(self.image['result'], cv2.CV_64F)
-        elif self.image['Filter'] == 'Canny':
-            self.image['result'] = cv2.Canny(self.image['result'], 100, 200)
         elif self.image['Filter'] == 'Average':
             self.image['result'] = cv2.blur(self.image['result'], (5, 5))
         elif self.image['Filter'] == 'Gaussian':
             self.image['result'] = cv2.GaussianBlur(self.image['result'], (5, 5), 0)
         elif self.image['Filter'] == 'Median':
-            self.image['result'] = cv2.medianBlur(self.image['result'], 5)
+            self.image['result'] = cv2.medianBlur(self.image['result'], 3)
 
         self.display_image(self.image['result'], self.proceesed_image_lbl)
 
-    def add_gaussian_noise(self, image, mean=0, sigma= np.sqrt(0.01)):
+    def add_gaussian_noise(self, image, mean=0, sigma= 25):
         """
         Add Gaussian noise to the input image.
 
@@ -153,20 +147,20 @@ class MainApp(QMainWindow, FORM_CLASS):
         if len(image.shape) == 2:  # Check if the image is grayscale
             row, col = image.shape
             gauss = np.random.normal(mean, sigma, (row, col))
-            noisy =  gauss  # Scale the noise intensity
+            noisy = image + gauss  # Scale the noise intensity
         else:  # Image is RGB/BGR
             row, col, ch = image.shape
             gauss = np.random.normal(mean, sigma, (row, col, ch))
             noisy = image + gauss   # Scale the noise intensity
 
-        return noisy
+        return np.clip(noisy, 0, 255)  # Clip values to [0, 255]
 
-    def add_salt_and_pepper_noise(self, image, salt_prob = 0.01, pepper_prob = 0.01):
+    def add_salt_and_pepper(self, image, salt_prob=0.01, pepper_prob=0.01):
         """
-        Add salt and pepper noise to the input image.
+        Add salt and pepper noise to the input grayscale image.
 
         Parameters:
-            image (numpy.ndarray): Input image.
+            image (numpy.ndarray): Input grayscale image.
             salt_prob (float): Probability of adding salt noise.
             pepper_prob (float): Probability of adding pepper noise.
 
@@ -176,11 +170,11 @@ class MainApp(QMainWindow, FORM_CLASS):
         noisy_image = np.copy(image)
 
         # Add salt noise
-        salt_mask = np.random.rand(*image.shape[:2]) < salt_prob
+        salt_mask = np.random.rand(*image.shape) < salt_prob
         noisy_image[salt_mask] = 255
 
         # Add pepper noise
-        pepper_mask = np.random.rand(*image.shape[:2]) < pepper_prob
+        pepper_mask = np.random.rand(*image.shape) < pepper_prob
         noisy_image[pepper_mask] = 0
 
         return noisy_image
