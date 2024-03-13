@@ -46,6 +46,8 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.mask_combo_box.currentIndexChanged.connect(self.apply_mask)
         self.process_btn.clicked.connect(self.process_image)
         self.clear_btn.clicked.connect(self.clear)
+        self.equalize_btn.clicked.connect(self.equalize_image)
+
 
 
 
@@ -219,6 +221,33 @@ class MainApp(QMainWindow, FORM_CLASS):
         noisy_image[pepper_mask] = 0
 
         return noisy_image
+    
+    def equalize_image(self):
+        if self.image['original'] is None:
+            return
+        # Perform histogram equalization
+        equalized_image = self.img_equalize(self.image["gray"])
+
+        # Update the result image
+        self.image['result'] = equalized_image
+
+        # Display the result image
+        self.display_image(equalized_image, self.proceesed_image_lbl)
+
+    def gray_histogram_compute(self, image):
+        img_height, img_width = image.shape[:2]
+        hist = np.zeros([256], np.int32)
+        for x in range(img_height):
+            for y in range(img_width):
+                hist[image[x, y]] += 1
+        return hist
+
+    def img_equalize(self, img):
+        hist = self.gray_histogram_compute(img)
+        cdf = hist.cumsum()
+        cdf_min = cdf.min()
+        img_equalized = ((cdf[img] - cdf_min) * 255 / (img.size - cdf_min)).astype('uint8')
+        return img_equalized
 
 
 def main():  # method to start app
