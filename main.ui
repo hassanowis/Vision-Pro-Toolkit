@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>852</width>
+    <width>861</width>
     <height>757</height>
    </rect>
   </property>
@@ -221,17 +221,22 @@
               </item>
               <item>
                <property name="text">
-                <string>Average Filter</string>
+                <string>Canny</string>
                </property>
               </item>
               <item>
                <property name="text">
-                <string>Gaussian Filter</string>
+                <string>Sobel</string>
                </property>
               </item>
               <item>
                <property name="text">
-                <string>Median Filter</string>
+                <string>Roberts</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Prewitt</string>
                </property>
               </item>
              </widget>
@@ -241,16 +246,16 @@
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_6">
             <item>
-             <widget class="QPushButton" name="process_btn">
+             <widget class="QPushButton" name="clear_btn">
               <property name="text">
-               <string>Apply</string>
+               <string>Clear All</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="clear_btn">
+             <widget class="QPushButton" name="process_btn">
               <property name="text">
-               <string>Clear All</string>
+               <string>Apply</string>
               </property>
              </widget>
             </item>
@@ -340,8 +345,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>852</width>
-     <height>21</height>
+     <width>861</width>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menufile">

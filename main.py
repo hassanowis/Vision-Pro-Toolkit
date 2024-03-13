@@ -162,6 +162,17 @@ class MainApp(QMainWindow, FORM_CLASS):
         elif self.image['Filter'] == 'Median':
             self.image['result'] = cv2.medianBlur(self.image['result'], 3)
 
+        if self.image['Mask'] == 'None':
+            self.image['result'] = self.image['result']
+        elif self.image['Mask'] == 'Sobel':
+            self.image['result'] = self.sobel_edge_detection(self.image['result'])
+        elif self.image['Mask'] == 'Roberts':
+            self.image['result'] = self.roberts_edge_detection(self.image['result'])
+        elif self.image['Mask'] == 'Prewitt':
+            self.image['result'] = self.prewitt_edge_detection(self.image['result'])
+        elif self.image['Mask'] == 'Canny':
+            self.image['result'] = self.canny_edge_detection(self.image['result'])
+
         self.display_image(self.image['result'], self.proceesed_image_lbl)
 
     def add_uniform_noise(self, image, low=0, high=255*0.2):
@@ -268,6 +279,86 @@ class MainApp(QMainWindow, FORM_CLASS):
         img_max = np.max(img)
         normalized_img = ((img - img_min) / (img_max - img_min) * 255).astype('uint8')
         return normalized_img
+    
+    def sobel_edge_detection(self, image):
+        """
+        Apply Sobel edge detection to the input image.
+
+        Parameters:
+            image (numpy.ndarray): Input image.
+
+        Returns:
+            numpy.ndarray: Image with Sobel edge detection applied.
+        """
+        image = image / 255.0  # Normalize the image
+
+        kernel = np.array([[-1, 0, 1], 
+                           [-2, 0, 2],
+                            [-1, 0, 1]])  # Sobel kernel
+        sobel_x = cv2.filter2D(image, -1, kernel)
+        sobel_y = cv2.filter2D(image, -1, kernel.T)
+        sobel = np.sqrt(sobel_x ** 2 + sobel_y ** 2)
+        sobel = (sobel * 255).astype(np.uint8)
+        return sobel
+    def roberts_edge_detection(self, image):
+        """
+        Apply Roberts edge detection to the input image.
+
+        Parameters:
+            image (numpy.ndarray): Input image.
+
+        Returns:
+            numpy.ndarray: Image with Roberts edge detection applied.
+        """
+        image = image / 255.0  # Normalize the image
+        kernel_x = np.array([[1, 0],
+                             [0, -1]])  # Roberts kernel for x-axis
+        kernel_y = np.array([[0, 1],
+                             [-1, 0]])  # Roberts kernel for y-axis
+        roberts_x = cv2.filter2D(image, -1, kernel_x)
+        roberts_y = cv2.filter2D(image, -1, kernel_y)
+        roberts = np.sqrt(roberts_x ** 2 + roberts_y ** 2)
+        roberts = (roberts * 255).astype(np.uint8)
+        return roberts
+    def prewitt_edge_detection(self, image):
+        """
+        Apply Prewitt edge detection to the input image.
+
+        Parameters:
+            image (numpy.ndarray): Input image.
+
+        Returns:
+            numpy.ndarray: Image with Prewitt edge detection applied.
+        """
+        image = image / 255.0  # Normalize the image
+        kernel_x = np.array([[-1, 0, 1],
+                             [-1, 0, 1],
+                             [-1, 0, 1]])
+        kernel_y = np.array([[-1, -1, -1],
+                             [0, 0, 0],
+                             [1, 1, 1]])
+        prewitt_x = cv2.filter2D(image, -1, kernel_x)
+        prewitt_y = cv2.filter2D(image, -1, kernel_y)
+        prewitt = np.sqrt(prewitt_x ** 2 + prewitt_y ** 2)
+        prewitt = (prewitt * 255).astype(np.uint8)
+        return prewitt
+    
+    def canny_edge_detection(self, image, low_threshold = 60, high_threshold = 200):
+        """
+        Apply Canny edge detection to the input image.
+
+        Parameters:
+            image (numpy.ndarray): Input image.
+            low_threshold (float): Low threshold for the hysteresis procedure.
+            high_threshold (float): High threshold for the hysteresis procedure.
+
+        Returns:
+            numpy.ndarray: Image with Canny edge detection applied.
+        """
+        # image = image / 255.0  # Normalize the image
+        canny = cv2.Canny(image, low_threshold, high_threshold)
+        return canny
+
 
 def main():  # method to start app
     app = QApplication(sys.argv)
