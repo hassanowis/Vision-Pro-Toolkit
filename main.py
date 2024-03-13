@@ -162,7 +162,10 @@ class MainApp(QMainWindow, FORM_CLASS):
             gauss = np.random.normal(mean, sigma, (row, col, ch))
             noisy = image + gauss   # Scale the noise intensity
 
-        return np.clip(noisy, 0, 255)  # Clip values to [0, 255]
+        # Clip values to [0, 255] and convert to uint8
+        noisy = np.clip(noisy, 0, 255).astype(np.uint8)
+
+        return noisy
 
     def add_salt_and_pepper(self, image, salt_prob=0.01, pepper_prob=0.01):
         """
