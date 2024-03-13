@@ -116,7 +116,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         elif self.image['Noise'] == 'Gaussian':
             self.image['result'] = self.add_gaussian_noise(self.image['gray'])
         elif self.image['Noise'] == 'Uniform':
-            self.image['result'] = cv2.blur(self.image['gray'], (7, 7))
+            self.image['result'] = self.add_uniform_noise(self.image['gray'])
         elif self.image['Noise'] == 'Salt and Pepper':
             self.image['result'] = self.add_salt_and_pepper(self.image['gray'])
 
@@ -131,6 +131,15 @@ class MainApp(QMainWindow, FORM_CLASS):
             self.image['result'] = cv2.medianBlur(self.image['result'], 3)
 
         self.display_image(self.image['result'], self.proceesed_image_lbl)
+    def add_uniform_noise(self, image, low=0, high=255*0.2):
+        row, col = image.shape
+        noise = np.zeros((row, col))
+        for i in range(row):
+            for j in range(col):
+                noise[i, j] = np.random.uniform(low, high)  # Generate random number from uniform distribution
+        print(max(noise[0]))
+        noisy = (image) + noise
+        return noisy
 
     def add_gaussian_noise(self, image, mean=0, sigma= 25):
         """
