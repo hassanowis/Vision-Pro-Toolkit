@@ -26,7 +26,7 @@
        </attribute>
        <layout class="QGridLayout" name="gridLayout_2">
         <item row="0" column="0">
-         <layout class="QVBoxLayout" name="verticalLayout_2">
+         <layout class="QVBoxLayout" name="verticalLayout">
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_5">
             <item>
@@ -76,174 +76,181 @@
            </layout>
           </item>
           <item>
-           <layout class="QVBoxLayout" name="verticalLayout">
+           <layout class="QHBoxLayout" name="horizontalLayout_8">
             <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_8">
+             <widget class="QComboBox" name="comboBox_2">
               <item>
-               <widget class="QComboBox" name="comboBox_2">
-                <item>
-                 <property name="text">
-                  <string>Local Thresholding</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Global Thresholding</string>
-                 </property>
-                </item>
-               </widget>
+               <property name="text">
+                <string>Local Thresholding</string>
+               </property>
               </item>
               <item>
-               <widget class="QPushButton" name="apply_threshold_btn">
-                <property name="text">
-                 <string>Apply</string>
-                </property>
-               </widget>
+               <property name="text">
+                <string>Global Thresholding</string>
+               </property>
               </item>
-             </layout>
+             </widget>
             </item>
             <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_7">
-              <property name="spacing">
-               <number>6</number>
+             <widget class="QPushButton" name="apply_threshold_btn">
+              <property name="text">
+               <string>Apply</string>
               </property>
-              <property name="sizeConstraint">
-               <enum>QLayout::SetFixedSize</enum>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_7">
+            <property name="spacing">
+             <number>6</number>
+            </property>
+            <property name="sizeConstraint">
+             <enum>QLayout::SetFixedSize</enum>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QPushButton" name="equalize_btn">
+              <property name="text">
+               <string>Equalize</string>
               </property>
-              <property name="leftMargin">
-               <number>0</number>
-              </property>
-              <property name="topMargin">
-               <number>0</number>
-              </property>
-              <property name="bottomMargin">
-               <number>0</number>
-              </property>
-              <item>
-               <widget class="QPushButton" name="equalize_btn">
-                <property name="text">
-                 <string>Equalize</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="normalize_btn">
-                <property name="text">
-                 <string>Normalize</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
+             </widget>
             </item>
             <item>
-             <layout class="QHBoxLayout" name="horizontalLayout">
-              <item>
-               <widget class="QLabel" name="label_3">
-                <property name="text">
-                 <string>Add Noise</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QComboBox" name="noise_combo_box">
-                <item>
-                 <property name="text">
-                  <string>None</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Uniform</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Gaussian</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Salt and Pepper</string>
-                 </property>
-                </item>
-               </widget>
-              </item>
-             </layout>
+             <widget class="QPushButton" name="normalize_btn">
+              <property name="text">
+               <string>Normalize</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout">
+            <item>
+             <widget class="QLabel" name="label_3">
+              <property name="text">
+               <string>Add Noise</string>
+              </property>
+             </widget>
             </item>
             <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_2">
+             <widget class="QComboBox" name="noise_combo_box">
               <item>
-               <widget class="QLabel" name="label_4">
-                <property name="text">
-                 <string>Low Pass Filters</string>
-                </property>
-               </widget>
+               <property name="text">
+                <string>None</string>
+               </property>
               </item>
               <item>
-               <widget class="QComboBox" name="filter_combo_box">
-                <item>
-                 <property name="text">
-                  <string>None</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Average</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Gaussian</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Median</string>
-                 </property>
-                </item>
-               </widget>
+               <property name="text">
+                <string>Uniform</string>
+               </property>
               </item>
-             </layout>
+              <item>
+               <property name="text">
+                <string>Gaussian</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Salt and Pepper</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <item>
+             <widget class="QLabel" name="label_4">
+              <property name="text">
+               <string>Low Pass Filters</string>
+              </property>
+             </widget>
             </item>
             <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <widget class="QComboBox" name="filter_combo_box">
               <item>
-               <widget class="QLabel" name="label_5">
-                <property name="text">
-                 <string>Add Mask For Edge Detection</string>
-                </property>
-               </widget>
+               <property name="text">
+                <string>None</string>
+               </property>
               </item>
               <item>
-               <widget class="QComboBox" name="mask_combo_box">
-                <item>
-                 <property name="text">
-                  <string>None</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Average Filter</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Gaussian Filter</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Median Filter</string>
-                 </property>
-                </item>
-               </widget>
+               <property name="text">
+                <string>Average</string>
+               </property>
               </item>
-             </layout>
+              <item>
+               <property name="text">
+                <string>Gaussian</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Median</string>
+               </property>
+              </item>
+             </widget>
             </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_3">
+            <item>
+             <widget class="QLabel" name="label_5">
+              <property name="text">
+               <string>Add Mask For Edge Detection</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="mask_combo_box">
+              <item>
+               <property name="text">
+                <string>None</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Average Filter</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Gaussian Filter</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Median Filter</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_6">
             <item>
              <widget class="QPushButton" name="process_btn">
               <property name="text">
                <string>Apply</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="clear_btn">
+              <property name="text">
+               <string>Clear All</string>
               </property>
              </widget>
             </item>

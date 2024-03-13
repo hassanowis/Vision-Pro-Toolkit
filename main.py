@@ -45,6 +45,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.filter_combo_box.currentIndexChanged.connect(self.apply_filter)
         self.mask_combo_box.currentIndexChanged.connect(self.apply_mask)
         self.process_btn.clicked.connect(self.process_image)
+        self.clear_btn.clicked.connect(self.clear)
 
 
 
@@ -61,7 +62,12 @@ class MainApp(QMainWindow, FORM_CLASS):
                 image = cv2.imread(file_paths[0])
                 image = cv2.resize(image, (self.pre_process_image_lbl.width(), self.pre_process_image_lbl.height()))
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                # clear the dictionary
+                self.clear_dict()
                 self.image["original"] = image
+                # clear all labels
+                self.pre_process_image_lbl.clear()
+                self.proceesed_image_lbl.clear()
                 self.gray_scale()
 
     def display_image(self, image, label):
@@ -87,7 +93,9 @@ class MainApp(QMainWindow, FORM_CLASS):
     def gray_scale(self):
         # Convert image to gray scale
         self.image["gray"] = cv2.cvtColor(self.image["original"], cv2.COLOR_BGR2GRAY)
+        self.image["result"] = self.image["gray"]
         self.display_image(self.image["gray"], self.pre_process_image_lbl)
+
     def binary(self):
         # Convert image to binary
         self.gray_scale()
@@ -107,6 +115,24 @@ class MainApp(QMainWindow, FORM_CLASS):
         # Apply mask to the image
         self.image['Mask'] = self.mask_combo_box.currentText()
 
+    def clear(self):
+        self.image['result'] = self.image['gray']
+        self.display_image(self.image['result'], self.proceesed_image_lbl)
+
+    def clear_dict(self):
+        self.image = {
+            "original": None,
+            "gray": None,
+            "binary": None,
+            "Noise": 'None',
+            "Filter": 'None',
+            "Mask": 'None',
+            "Equalized": False,
+            "Normalized": False,
+            "Threshold": 'None',
+            "result": None,
+        }
+
     def process_image(self):
         if self.image['original'] is None:
             return
@@ -114,12 +140,14 @@ class MainApp(QMainWindow, FORM_CLASS):
         if self.image['Noise'] == 'None':
             self.image['result'] = self.image['gray']
         elif self.image['Noise'] == 'Gaussian':
-            self.image['result'] = self.add_gaussian_noise(self.image['gray'])
+            self.image['result'] = self.add_gaussian_noise(self.image['result'])
         elif self.image['Noise'] == 'Uniform':
-            self.image['result'] = self.add_uniform_noise(self.image['gray'])
+            self.image['result'] = self.add_uniform_noise(self.image['result'])
         elif self.image['Noise'] == 'Salt and Pepper':
-            self.image['result'] = self.add_salt_and_pepper(self.image['gray'])
+            self.image['result'] = self.add_salt_and_pepper(self.image['result'])
 
+        self.image['result'] = self.image['result'].astype(np.uint8)
+        
         # Apply filter
         if self.image['Filter'] == 'None':
             self.image['result'] = self.image['result']
@@ -131,6 +159,7 @@ class MainApp(QMainWindow, FORM_CLASS):
             self.image['result'] = cv2.medianBlur(self.image['result'], 3)
 
         self.display_image(self.image['result'], self.proceesed_image_lbl)
+
     def add_uniform_noise(self, image, low=0, high=255*0.2):
         row, col = image.shape
         noise = np.zeros((row, col))
