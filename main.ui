@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1337</width>
-    <height>857</height>
+    <width>1058</width>
+    <height>797</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -31,6 +31,18 @@
            <layout class="QHBoxLayout" name="horizontalLayout_5">
             <item>
              <widget class="QLabel" name="pre_process_image_lbl">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>400</width>
+                <height>400</height>
+               </size>
+              </property>
               <property name="styleSheet">
                <string notr="true">background-color:lightgrey</string>
               </property>
@@ -41,6 +53,18 @@
             </item>
             <item>
              <widget class="QLabel" name="proceesed_image_lbl">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>400</width>
+                <height>400</height>
+               </size>
+              </property>
               <property name="styleSheet">
                <string notr="true">background-color:lightgrey</string>
               </property>
@@ -324,8 +348,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1337</width>
-     <height>26</height>
+     <width>1058</width>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menufile">

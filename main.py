@@ -25,7 +25,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.handle_buttons()
         self.setWindowTitle("Image Processing")
         # full screen
-        self.showMaximized()
+        # self.showMaximized()
         self.image = {
             "original": None,
             "gray": None,
