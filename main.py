@@ -47,6 +47,8 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.process_btn.clicked.connect(self.process_image)
         self.clear_btn.clicked.connect(self.clear)
         self.equalize_btn.clicked.connect(self.equalize_image)
+        self.normalize_btn.clicked.connect(self.normalize_image)
+
 
 
 
@@ -226,7 +228,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         if self.image['original'] is None:
             return
         # Perform histogram equalization
-        equalized_image = self.img_equalize(self.image["gray"])
+        equalized_image = self.image_equalizaion(self.image["gray"])
 
         # Update the result image
         self.image['result'] = equalized_image
@@ -234,7 +236,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         # Display the result image
         self.display_image(equalized_image, self.proceesed_image_lbl)
 
-    def gray_histogram_compute(self, image):
+    def compute_gray_histogram(self, image):
         img_height, img_width = image.shape[:2]
         hist = np.zeros([256], np.int32)
         for x in range(img_height):
@@ -242,13 +244,30 @@ class MainApp(QMainWindow, FORM_CLASS):
                 hist[image[x, y]] += 1
         return hist
 
-    def img_equalize(self, img):
-        hist = self.gray_histogram_compute(img)
+    def image_equalizaion(self, img):
+        hist = self.compute_gray_histogram(img)
         cdf = hist.cumsum()
         cdf_min = cdf.min()
         img_equalized = ((cdf[img] - cdf_min) * 255 / (img.size - cdf_min)).astype('uint8')
         return img_equalized
 
+    def normalize_image(self):
+        if self.image['original'] is None:
+            return
+        # Perform normalization
+        normalized_image = self.image_normalization(self.image["gray"])
+
+        # Update the result image
+        self.image['result'] = normalized_image
+
+        # Display the result image
+        self.display_image(normalized_image, self.proceesed_image_lbl)
+
+    def image_normalization(self, img):
+        img_min = np.min(img)
+        img_max = np.max(img)
+        normalized_img = ((img - img_min) / (img_max - img_min) * 255).astype('uint8')
+        return normalized_img
 
 def main():  # method to start app
     app = QApplication(sys.argv)
