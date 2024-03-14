@@ -11,6 +11,9 @@ import pandas as pd
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import *
 from PyQt5.uic import loadUiType
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 
 FORM_CLASS, _ = loadUiType(
@@ -174,6 +177,8 @@ class MainApp(QMainWindow, FORM_CLASS):
             self.image['result'] = self.canny_edge_detection(self.image['result'])
 
         self.display_image(self.image['result'], self.proceesed_image_lbl)
+        self.plot_gray_histogram(self.image['result'])
+        self.plot_gray_distribution_curve(self.image['result'])
 
     def add_uniform_noise(self, image, low=0, high=255*0.2):
         row, col = image.shape
@@ -279,6 +284,50 @@ class MainApp(QMainWindow, FORM_CLASS):
         img_max = np.max(img)
         normalized_img = ((img - img_min) / (img_max - img_min) * 255).astype('uint8')
         return normalized_img
+    
+    def plot_gray_histogram(self, img):
+        # Compute gray histogram
+        hist = self.compute_gray_histogram(img)
+
+        # Plot histogram
+        fig, ax = plt.subplots(figsize=(2.5, 2.5))
+        ax.bar(np.arange(256), hist, color='blue', alpha=0.5)
+        ax.set_title('Gray Histogram')
+        ax.set_xlabel('Pixel Intensity')
+        ax.set_ylabel('Frequency')
+
+        # Convert the Matplotlib figure to a QPixmap
+        canvas = FigureCanvas(fig)
+        canvas.draw()
+        size = canvas.size()
+        width, height = size.width(), size.height()
+        histogram_pixmap = QPixmap(canvas.grab())
+
+        # Display the histogram on the label
+        self.histogram_lbl.setPixmap(histogram_pixmap)
+
+    def plot_gray_distribution_curve(self, img):
+        # Compute gray histogram
+        hist = self.compute_gray_histogram(img)
+        cdf = hist.cumsum()
+        cdf_normalized = cdf / cdf.max()
+
+        # Plot distribution curve (CDF)
+        fig, ax = plt.subplots(figsize=(2, 2))  # Adjust the size as needed
+        ax.plot(cdf_normalized, color='red')
+        ax.set_title('Distribution Curve (CDF)')
+        ax.set_xlabel('Pixel Intensity')
+        ax.set_ylabel('Cumulative Frequency')
+
+        # Convert the Matplotlib figure to a QPixmap
+        canvas = FigureCanvas(fig)
+        canvas.draw()
+        size = canvas.size()
+        width, height = size.width(), size.height()
+        distribution_curve_pixmap = QPixmap(canvas.grab())
+
+        # Display the distribution curve on the label
+        self.distribution_curve_lbl.setPixmap(distribution_curve_pixmap)
     
     def sobel_edge_detection(self, image):
         """
