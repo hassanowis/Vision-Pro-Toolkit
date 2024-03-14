@@ -8,11 +8,12 @@ import cv2
 from PyQt5.QtCore import QTimer, Qt
 import numpy as np
 import pandas as pd
+from scipy.ndimage import gaussian_filter
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import *
 from PyQt5.uic import loadUiType
 import matplotlib.pyplot as plt
-import numpy as np
+import scipy as sp
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 
@@ -56,6 +57,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.label_mix_2.mouseDoubleClickEvent = lambda event: self.handle_mouse(event, label = self.label_mix_2, type='mix_2' )
         self.MIX_btn.clicked.connect(self.mix_images)
         self.normalize_btn.clicked.connect(self.normalize_image)
+        self.apply_threshold_btn.clicked.connect(self.apply_threshold)
 
 
     def handle_mouse(self, event, label, type = 'original'):
@@ -140,6 +142,16 @@ class MainApp(QMainWindow, FORM_CLASS):
         # Apply mask to the image
         self.image['Mask'] = self.mask_combo_box.currentText()
 
+    def apply_threshold(self):
+        # Apply threshold to the image
+        self.image['Threshold'] = self.threshold_combo_box.currentText()
+        if self.image['Threshold'] == 'Local Thresholding':
+            self.image['result'] = self.local_thresholding()
+        else:
+            self.image['result'] = self.global_thresholding()
+        
+        self.display_image(self.image['result'], self.proceesed_image_lbl)
+
     def clear(self):
         self.image['result'] = self.image['gray']
         self.display_image(self.image['result'], self.proceesed_image_lbl)
@@ -202,6 +214,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.display_image(self.image['result'], self.proceesed_image_lbl)
         self.plot_gray_histogram(self.image['result'])
         self.plot_gray_distribution_curve(self.image['result'])
+        self.plot_RGB_histogram(self.image['original'], self.rgb_histogram_lbl)
 
     def add_uniform_noise(self, image, low=0, high=255*0.2):
         row, col = image.shape
@@ -573,8 +586,125 @@ class MainApp(QMainWindow, FORM_CLASS):
 
         self.display_image(mixed_image, self.label_2)
 
+    def local_thresholding(self):
+        """
+        Apply local thresholding to the input image.
 
+        Parameters:
+            image (numpy.ndarray): Input image.
+
+        Returns:
+            numpy.ndarray: Image with local thresholding applied.
+        """
         
+        image = self.image['result']  # gray scale image
+        height, width = image.shape
+        local_thresholded_image = np.zeros_like(image)
+        smoothed_image = gaussian_filter(image, sigma=10) #This helps in reducing noise and provides a more stable estimate of the local mean.
+
+        for i in range(height):
+            for j in range(width):
+                # Extract a 3x3 window around the current pixel (with padding if necessary)
+                window = smoothed_image[max(0, i - 1) : min(height, i + 2), max(0, j - 1) : min(width, j + 2)]
+                
+                # Calculate the local mean of the window
+                local_mean = np.mean(window.flatten())
+                
+                # If the pixel value in the original image is greater than the mean value,
+                # set the pixel value in the local thresholded image to 255 (white), otherwise set it to 0 (black)
+                local_thresholded_image[i, j] = 255 if image[i, j] > local_mean else 0
+
+        return local_thresholded_image
+
+    def global_thresholding(self):
+        """
+        Apply global thresholding to the input image.
+
+        Parameters:
+            image (numpy.ndarray): Input image.
+            threshold (int): Threshold value.
+
+        Returns:
+            numpy.ndarray: Image with global thresholding applied.
+        """
+        image = self.image['result']
+        threshold = 127
+        height, width = image.shape
+        thresholded_image = np.zeros_like(image, dtype=np.uint8)
+        for i in range(height):
+            for j in range(width):
+                if image[i, j] > threshold:
+                    thresholded_image[i, j] = 255
+
+
+        return thresholded_image
+    
+    def RGB_histograms(self, image):
+        """
+        Compute the histograms for each channel of the input RGB image.
+
+        Parameters:
+            image (numpy.ndarray): Input RGB image.
+
+        Returns:
+            list: List containing the histograms for each channel.
+        """
+        r_hist = np.bincount(image[:, :, 0].ravel(), minlength=256)
+        g_hist = np.bincount(image[:, :, 1].ravel(), minlength=256)
+        b_hist = np.bincount(image[:, :, 2].ravel(), minlength=256)
+
+        return [r_hist, g_hist, b_hist]
+    
+    def plot_RGB_histogram(self, image, label):
+        """
+        Plot each R,g,b histogram by itself in the 9x3 figsize in 3 different plots in the label with their distribution functions.
+        The plots are normalized to have the same x and y ranges for each image inserted, and there is padding between the plots.
+
+        Parameters:
+            image (numpy.ndarray): Input RGB image.
+        """
+        # Compute the histograms and distribution functions
+        r_hist, g_hist, b_hist = self.RGB_histograms(image)
+        r_mu, r_std = np.mean(image[:, :, 0]), np.std(image[:, :, 0])
+        g_mu, g_std = np.mean(image[:, :, 1]), np.std(image[:, :, 1])
+        b_mu, b_std = np.mean(image[:, :, 2]), np.std(image[:, :, 2])
+        r_distribution = sp.stats.norm.pdf(np.linspace(0, 255, 256), r_mu, r_std)
+        g_distribution = sp.stats.norm.pdf(np.linspace(0, 255, 256), g_mu, g_std)
+        b_distribution = sp.stats.norm.pdf(np.linspace(0, 255, 256), b_mu, b_std)
+
+        # Define x and y ranges
+        x_min = min(np.min(image[:, :, 0]), np.min(image[:, :, 1]), np.min(image[:, :, 2]))
+        x_max = max(np.max(image[:, :, 0]), np.max(image[:, :, 1]), np.max(image[:, :, 2]))
+        y_min = 0
+        y_max = max(np.max(r_hist), np.max(g_hist), np.max(b_hist))
+
+        # Plot each histogram and distribution function in a separate subplot
+        fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(9, 3))
+        for ax, hist, distribution, color in zip(axes, [r_hist, g_hist, b_hist], [r_distribution, g_distribution, b_distribution], ['red', 'green', 'blue']):
+            ax.bar(np.linspace(x_min, x_max, 256), hist, color=color, alpha=0.5, width=(x_max-x_min)/256, label=color.capitalize())
+            ax.plot(np.linspace(x_min, x_max, 256), distribution, color=color, linestyle='--', alpha=0.5)
+            ax.set_xlim(x_min, x_max)
+            ax.set_ylim(0, y_max)
+            ax.set_title(color.capitalize() + ' Histogram')
+            ax.set_xlabel('Pixel Intensity')
+            ax.set_ylabel('Number of pixels')
+        fig.tight_layout(pad=3)
+
+        # Convert the Matplotlib figure to a QPixmap
+        canvas = FigureCanvas(fig)
+        canvas.draw()
+        size = canvas.size()
+        histogram_pixmap = QPixmap(canvas.grab())
+
+        # Display the histograms on the label
+        label.setPixmap(histogram_pixmap)
+
+
+
+
+
+
+    
 
 def main():  # method to start app
     app = QApplication(sys.argv)
