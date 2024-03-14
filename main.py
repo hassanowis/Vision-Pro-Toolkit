@@ -54,7 +54,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.equalize_btn.clicked.connect(self.equalize_image)
         self.label_mix_1.mouseDoubleClickEvent = lambda event: self.handle_mouse(event, label=self.label_mix_1,type='mix_1' )
         self.label_mix_2.mouseDoubleClickEvent = lambda event: self.handle_mouse(event, label = self.label_mix_2, type='mix_2' )
-        
+        self.MIX_btn.clicked.connect(self.mix_images)
         self.normalize_btn.clicked.connect(self.normalize_image)
 
 
@@ -86,8 +86,8 @@ class MainApp(QMainWindow, FORM_CLASS):
                 self.clear_dict()
                 self.image[type] = image
                 # clear all labels
-                self.pre_process_image_lbl.clear()
-                self.proceesed_image_lbl.clear()
+                label.clear()
+                label.clear()
                 # self.gray_scale()
                 if type == 'original':
                     self.gray_scale()
@@ -145,18 +145,20 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.display_image(self.image['result'], self.proceesed_image_lbl)
 
     def clear_dict(self):
-        self.image = {
-            "original": None,
-            "gray": None,
-            "binary": None,
-            "Noise": 'None',
-            "Filter": 'None',
-            "Mask": 'None',
-            "Equalized": False,
-            "Normalized": False,
-            "Threshold": 'None',
-            "result": None,
-        }
+  
+        self.image['result'] = None
+        self.image['gray'] = None
+        self.image['original'] = None
+        self.image['binary'] = None
+      
+        self.image['Noise'] = 'None'
+        self.image['Filter'] = 'None'
+        self.image['Mask'] = 'None'
+        self.image['Equalized'] = False
+        self.image['Normalized'] = False
+        self.image['Threshold'] = 'None'
+        
+
 
     def process_image(self):
         if self.image['original'] is None:
@@ -425,7 +427,41 @@ class MainApp(QMainWindow, FORM_CLASS):
         # image = image / 255.0  # Normalize the image
         canny = cv2.Canny(image, low_threshold, high_threshold)
         return canny
+    def fourier_transform(self, image):
+        """
+        Apply Fourier transform to the input image.
 
+        Parameters:
+            image (numpy.ndarray): Input image.
+
+        Returns:
+            numpy.ndarray: Image with Fourier transform applied.
+        """
+        # Convert the image to grayscale
+        if len(image.shape) > 2:
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        # Apply Fourier transform
+        f = np.fft.fft2(image)
+        fshift = np.fft.fftshift(f)
+        
+
+        return fshift
+    def mix_images(self):
+        if self.image['mix_1'] is None or self.image['mix_2'] is None:
+            return
+        fourier_1 = self.fourier_transform(self.image['mix_1'])
+        fourier_2 = self.fourier_transform(self.image['mix_2'])
+
+        mixed_fourier = fourier_1 + fourier_2
+
+        mixed_image = np.fft.ifft2(mixed_fourier)
+        mixed_image = np.abs(mixed_image)
+
+        self.display_image(mixed_image, self.label_2)
+
+
+        
 
 def main():  # method to start app
     app = QApplication(sys.argv)
