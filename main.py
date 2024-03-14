@@ -179,12 +179,15 @@ class MainApp(QMainWindow, FORM_CLASS):
         if self.image['Filter'] == 'None':
             self.image['result'] = self.image['result']
         elif self.image['Filter'] == 'Average':
-            self.image['result'] = cv2.blur(self.image['result'], (5, 5))
+            self.image['result'] = self.average_filter(self.image['result'])
         elif self.image['Filter'] == 'Gaussian':
-            self.image['result'] = cv2.GaussianBlur(self.image['result'], (5, 5), 0)
+            self.image['result'] = self.gaussian_filter(self.image['result'])
         elif self.image['Filter'] == 'Median':
-            self.image['result'] = cv2.medianBlur(self.image['result'], 3)
+            self.image['result'] = self.median_filter(self.image['result'])
 
+        self.image['result'] = self.image['result'].astype(np.uint8)
+
+        # Apply mask
         if self.image['Mask'] == 'None':
             self.image['result'] = self.image['result']
         elif self.image['Mask'] == 'Sobel':
@@ -259,12 +262,122 @@ class MainApp(QMainWindow, FORM_CLASS):
         noisy_image[pepper_mask] = 0
 
         return noisy_image
-    
+
+    def average_filter(self, image, kernel_size=(3, 3)):
+        """
+        Apply average filter to the input image.
+
+        Parameters:
+            image (numpy.ndarray): Input image.
+            kernel_size (tuple): Size of the square kernel. Default is (3, 3).
+
+        Returns:
+            numpy.ndarray: Image after applying average filter.
+        """
+        # Define the kernel
+        kernel = np.ones(kernel_size, dtype=np.float32) / (kernel_size[0] * kernel_size[1])
+
+        # Perform convolution
+        filtered_image = cv2.filter2D(image, -1, kernel, borderType=cv2.BORDER_REFLECT)
+
+        return filtered_image.astype(np.uint8)
+
+    def gaussian_filter(self, image, kernel_size=(3, 3), sigma=1):
+        """
+        Apply Gaussian filter to the input image.
+
+        Parameters:
+            image (numpy.ndarray): Input image.
+            kernel_size (tuple): Size of the square kernel. Default is (3, 3).
+            sigma (float): Standard deviation of the Gaussian distribution. Default is 1.
+
+        Returns:
+            numpy.ndarray: Image after applying Gaussian filter.
+        """
+        # Create a 2D Gaussian kernel
+        kernel = self.gaussian_kernel(kernel_size, sigma)
+
+        # Perform convolution with the Gaussian kernel
+        filtered_image = cv2.filter2D(image, -1, kernel)
+
+        return filtered_image
+
+    def gaussian_kernel(self, kernel_size=(3, 3), sigma=1):
+        """
+        Generate a 2D Gaussian kernel.
+
+        Parameters:
+            kernel_size (tuple): Size of the square kernel. Default is (3, 3).
+            sigma (float): Standard deviation of the Gaussian distribution. Default is 1.
+
+        Returns:
+            numpy.ndarray: 2D Gaussian kernel.
+        """
+        # Ensure kernel size is odd
+        if kernel_size[0] % 2 == 0 or kernel_size[1] % 2 == 0:
+            raise ValueError("Kernel size must be odd")
+
+        # Calculate center of the kernel
+        center_x = kernel_size[0] // 2
+        center_y = kernel_size[1] // 2
+
+        # Generate grid of indices
+        x = np.arange(-center_x, center_x + 1)
+        y = np.arange(-center_y, center_y + 1)
+        xx, yy = np.meshgrid(x, y)
+
+        # Calculate Gaussian kernel values
+        kernel = np.exp(-(xx ** 2 + yy ** 2) / (2 * sigma ** 2))
+        kernel /= np.sum(kernel)
+
+        return kernel
+
+    def median_filter(self, image, kernel_size=(3, 3)):
+        """
+        Apply median filter to the input image.
+
+        Parameters:
+            image (numpy.ndarray): Input image.
+            kernel_size (tuple): Size of the square kernel. Default is (3, 3).
+
+        Returns:
+            numpy.ndarray: Image after applying median filter.
+        """
+        # Get image dimensions
+        height, width = image.shape[:2]
+
+        # Get kernel dimensions
+        kernel_height, kernel_width = kernel_size
+
+        # Create an empty output image
+        output_image = np.zeros_like(image)
+
+        # Calculate border size for the kernel
+        border_height = kernel_height // 2
+        border_width = kernel_width // 2
+
+        # Pad the image with zeros to handle border cases
+        padded_image = np.pad(image, ((border_height, border_height), (border_width, border_width)), mode='constant')
+
+        # Perform median filtering
+        for i in range(border_height, height + border_height):
+            for j in range(border_width, width + border_width):
+                # Extract the region around the current pixel
+                region = padded_image[i - border_height:i + border_height + 1, j - border_width:j + border_width + 1]
+
+                # Compute the median value of pixel intensities in the region
+                median_value = np.median(region)
+
+                # Assign the median value to the corresponding pixel in the output image
+                output_image[i - border_height, j - border_width] = median_value
+
+        return output_image
+
     def equalize_image(self):
         if self.image['original'] is None:
             return
         # Perform histogram equalization
-        equalized_image = self.image_equalizaion(self.image["gray"])
+        equalized_image = self.image_equalizaion(self.image["result"])
 
         # Update the result image
         self.image['result'] = equalized_image
@@ -291,7 +404,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         if self.image['original'] is None:
             return
         # Perform normalization
-        normalized_image = self.image_normalization(self.image["gray"])
+        normalized_image = self.image_normalization(self.image["result"])
 
         # Update the result image
         self.image['result'] = normalized_image
