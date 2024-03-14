@@ -40,6 +40,8 @@ class MainApp(QMainWindow, FORM_CLASS):
             "Normalized": False,
             "Threshold": 'None',
             "result": None,
+            "mix_1": None,
+            "mix_2": None,
         }
 
     def handle_buttons(self):
@@ -50,13 +52,23 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.process_btn.clicked.connect(self.process_image)
         self.clear_btn.clicked.connect(self.clear)
         self.equalize_btn.clicked.connect(self.equalize_image)
+        self.label_mix_1.mouseDoubleClickEvent = lambda event: self.handle_mouse(event, label=self.label_mix_1,type='mix_1' )
+        self.label_mix_2.mouseDoubleClickEvent = lambda event: self.handle_mouse(event, label = self.label_mix_2, type='mix_2' )
+        
         self.normalize_btn.clicked.connect(self.normalize_image)
 
 
+    def handle_mouse(self, event, label, type = 'original'):
+        if event.button() == Qt.LeftButton:
+            
+            self.load_image(label,type)
+        
 
 
-
-    def load_image(self):
+    def load_image(self , label = None,type = 'original'):
+        if not label:
+            
+            label = self.pre_process_image_lbl
         # Load image from file explorer
         file_dialog = QFileDialog(self)
         file_dialog.setNameFilter("Image Files (*.png *.jpg *.jpeg *.bmp *.gif)")
@@ -67,15 +79,21 @@ class MainApp(QMainWindow, FORM_CLASS):
             if file_paths:
                 # resize image to fit the label before storing it
                 image = cv2.imread(file_paths[0])
-                image = cv2.resize(image, (self.pre_process_image_lbl.width(), self.pre_process_image_lbl.height()))
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                
+                image = cv2.resize(image, (label.width(), label.height()))
+                # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
                 # clear the dictionary
                 self.clear_dict()
-                self.image["original"] = image
+                self.image[type] = image
                 # clear all labels
                 self.pre_process_image_lbl.clear()
                 self.proceesed_image_lbl.clear()
-                self.gray_scale()
+                # self.gray_scale()
+                if type == 'original':
+                    self.gray_scale()
+                else:
+                    self.display_image(self.image[type], label)
+               
 
     def display_image(self, image, label):
         # Check if the image needs normalization and conversion
@@ -107,7 +125,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         # Convert image to binary
         self.gray_scale()
         _, self.image["binary"] = cv2.threshold(self.image["gray"], 127, 255, cv2.THRESH_BINARY)
-        print('binary', self.image["binary"])
+        
         self.display_image(self.image["binary"], self.pre_process_image_lbl)
 
     def apply_noise(self):
@@ -186,7 +204,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         for i in range(row):
             for j in range(col):
                 noise[i, j] = np.random.uniform(low, high)  # Generate random number from uniform distribution
-        print(max(noise[0]))
+        
         noisy = (image) + noise
         return noisy
 
