@@ -93,8 +93,10 @@ class MainApp(QMainWindow, FORM_CLASS):
                 # self.gray_scale()
                 if type == 'original':
                     self.gray_scale()
+                    self.plot_RGB_histogram(self.image['original'], self.rgb_histogram_lbl)
                 else:
                     self.display_image(self.image[type], label)
+                    
                
 
     def display_image(self, image, label):
@@ -214,7 +216,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.display_image(self.image['result'], self.proceesed_image_lbl)
         self.plot_gray_histogram(self.image['result'])
         self.plot_gray_distribution_curve(self.image['result'])
-        self.plot_RGB_histogram(self.image['original'], self.rgb_histogram_lbl)
+        
 
     def add_uniform_noise(self, image, low=0, high=255*0.2):
         row, col = image.shape
@@ -600,19 +602,20 @@ class MainApp(QMainWindow, FORM_CLASS):
         image = self.image['result']  # gray scale image
         height, width = image.shape
         local_thresholded_image = np.zeros_like(image)
-        smoothed_image = gaussian_filter(image, sigma=10) #This helps in reducing noise and provides a more stable estimate of the local mean.
+        
 
         for i in range(height):
             for j in range(width):
-                # Extract a 3x3 window around the current pixel (with padding if necessary)
-                window = smoothed_image[max(0, i - 1) : min(height, i + 2), max(0, j - 1) : min(width, j + 2)]
+                # Extract a 7x7 window around the current pixel (without padding)
+                window = image[i-3:i+4, j-3:j+4]
                 
                 # Calculate the local mean of the window
                 local_mean = np.mean(window.flatten())
                 
+                
                 # If the pixel value in the original image is greater than the mean value,
                 # set the pixel value in the local thresholded image to 255 (white), otherwise set it to 0 (black)
-                local_thresholded_image[i, j] = 255 if image[i, j] > local_mean else 0
+                local_thresholded_image[i, j] = 255 if image[i, j] > local_mean-5 else 0 # 5 is the threshold safety margin
 
         return local_thresholded_image
 
@@ -668,26 +671,37 @@ class MainApp(QMainWindow, FORM_CLASS):
         r_mu, r_std = np.mean(image[:, :, 0]), np.std(image[:, :, 0])
         g_mu, g_std = np.mean(image[:, :, 1]), np.std(image[:, :, 1])
         b_mu, b_std = np.mean(image[:, :, 2]), np.std(image[:, :, 2])
-        r_distribution = sp.stats.norm.pdf(np.linspace(0, 255, 256), r_mu, r_std)
-        g_distribution = sp.stats.norm.pdf(np.linspace(0, 255, 256), g_mu, g_std)
-        b_distribution = sp.stats.norm.pdf(np.linspace(0, 255, 256), b_mu, b_std)
+        red_distribution = sp.stats.norm.cdf(np.linspace(0, 255, 256), r_mu, r_std)
+        green_distribution = sp.stats.norm.cdf(np.linspace(0, 255, 256), g_mu, g_std)
+        blue_distribution = sp.stats.norm.cdf(np.linspace(0, 255, 256), b_mu, b_std)
 
         # Define x and y ranges
-        x_min = min(np.min(image[:, :, 0]), np.min(image[:, :, 1]), np.min(image[:, :, 2]))
-        x_max = max(np.max(image[:, :, 0]), np.max(image[:, :, 1]), np.max(image[:, :, 2]))
-        y_min = 0
-        y_max = max(np.max(r_hist), np.max(g_hist), np.max(b_hist))
+        x_min, x_max = 0, 255
+        y_min, y_max = 0, np.max(np.concatenate([r_hist, g_hist, b_hist])) * 1.05
 
         # Plot each histogram and distribution function in a separate subplot
-        fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(9, 3))
-        for ax, hist, distribution, color in zip(axes, [r_hist, g_hist, b_hist], [r_distribution, g_distribution, b_distribution], ['red', 'green', 'blue']):
-            ax.bar(np.linspace(x_min, x_max, 256), hist, color=color, alpha=0.5, width=(x_max-x_min)/256, label=color.capitalize())
-            ax.plot(np.linspace(x_min, x_max, 256), distribution, color=color, linestyle='--', alpha=0.5)
-            ax.set_xlim(x_min, x_max)
-            ax.set_ylim(0, y_max)
+        fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(9, 4))
+        for i, (hist, color) in enumerate(zip([r_hist, g_hist, b_hist], ['red', 'green', 'blue'])):
+            ax = axes[0, i]
+            ax.plot(np.arange(256), hist, color=color, alpha=0.5)
+            if i < 3:
+                ax.set_xlim(x_min, x_max)
+                ax.set_ylim(y_min, y_max)
+            else:
+                ax.set_xlim(x_min, x_max)
+                ax.set_ylim(0, np.max(hist) * 1.05)
             ax.set_title(color.capitalize() + ' Histogram')
             ax.set_xlabel('Pixel Intensity')
             ax.set_ylabel('Number of pixels')
+
+            ax = axes[1, i]
+            dist_func = locals()[color + '_distribution']
+            ax.plot(np.linspace(x_min, x_max, 256), dist_func, color=color, alpha=0.5)
+            ax.set_xlim(x_min, x_max)
+            ax.set_ylim(0, 1)
+            ax.set_title(color.capitalize() + ' CDF')
+            ax.set_xlabel('Pixel Intensity')
+            ax.set_ylabel('CDF')
         fig.tight_layout(pad=3)
 
         # Convert the Matplotlib figure to a QPixmap
@@ -698,6 +712,8 @@ class MainApp(QMainWindow, FORM_CLASS):
 
         # Display the histograms on the label
         label.setPixmap(histogram_pixmap)
+
+
 
 
 
