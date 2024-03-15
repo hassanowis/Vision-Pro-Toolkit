@@ -438,7 +438,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         hist = self.compute_gray_histogram(img)
 
         # Plot histogram
-        fig, ax = plt.subplots(figsize=(4, 4))
+        fig, ax = plt.subplots(figsize=(3.5, 3.5))
         ax.bar(np.arange(256), hist, color='blue', alpha=0.5)
         ax.set_title('Gray Histogram')
         ax.set_xlabel('Pixel Intensity')
@@ -461,7 +461,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         cdf_normalized = cdf / cdf.max()
 
         # Plot distribution curve (CDF)
-        fig, ax = plt.subplots(figsize=(4, 4))  # Adjust the size as needed
+        fig, ax = plt.subplots(figsize=(3.5, 3.5))  # Adjust the size as needed
         ax.plot(cdf_normalized, color='red')
         ax.set_title('Distribution Curve (CDF)')
         ax.set_xlabel('Pixel Intensity')
