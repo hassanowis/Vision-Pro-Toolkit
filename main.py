@@ -50,6 +50,8 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.noise_combo_box.currentIndexChanged.connect(self.apply_noise)
         self.filter_combo_box.currentIndexChanged.connect(self.apply_filter)
         self.mask_combo_box.currentIndexChanged.connect(self.apply_mask)
+        self.threshold_combo_box.currentIndexChanged.connect(self.threshold_combo_change)
+        self.threshold_slider.valueChanged.connect(self.threshold_slider_change)
         self.process_btn.clicked.connect(self.process_image)
         self.clear_btn.clicked.connect(self.clear)
         self.equalize_btn.clicked.connect(self.equalize_image)
@@ -62,8 +64,7 @@ class MainApp(QMainWindow, FORM_CLASS):
 
     def handle_mouse(self, event, label, type = 'original'):
         if event.button() == Qt.LeftButton:
-            
-            self.load_image(label,type)
+            self.load_image(label, type)
         
 
 
@@ -94,6 +95,7 @@ class MainApp(QMainWindow, FORM_CLASS):
                 if type == 'original':
                     self.gray_scale()
                     self.plot_RGB_histogram(self.image['original'], self.rgb_histogram_lbl)
+                    self.proceesed_image_lbl.clear()
                 else:
                     self.display_image(self.image[type], label)
                     
@@ -147,12 +149,30 @@ class MainApp(QMainWindow, FORM_CLASS):
     def apply_threshold(self):
         # Apply threshold to the image
         self.image['Threshold'] = self.threshold_combo_box.currentText()
+        # Get the threshold value from the slider
+        threshold = self.threshold_slider.value()
+
+        # Apply thresholding based on the selected thresholding method
         if self.image['Threshold'] == 'Local Thresholding':
-            self.image['result'] = self.local_thresholding()
+            self.image['result'] = self.local_thresholding(self.image['gray'], threshold_margin=threshold)
         else:
-            self.image['result'] = self.global_thresholding()
-        
+            self.image['result'] = self.global_thresholding(self.image['gray'], threshold)
+
+        # Display the thresholded image
         self.display_image(self.image['result'], self.proceesed_image_lbl)
+
+    def threshold_combo_change(self):
+        # adjust the range of the slider based on the selected thresholding method
+        if self.threshold_combo_box.currentText() == 'Local Thresholding':
+            self.threshold_slider.setRange(0, 100)
+            self.threshold_slider.setValue(5)
+        else:
+            self.threshold_slider.setRange(0, 255)
+            self.threshold_slider.setValue(127)
+
+    def threshold_slider_change(self):
+        # Change the threshold label based on the slider value
+        self.threshold_lbl.setText('Threshold Value: ' + str(self.threshold_slider.value()))
 
     def clear(self):
         self.image['result'] = self.image['gray']
@@ -588,38 +608,37 @@ class MainApp(QMainWindow, FORM_CLASS):
 
         self.display_image(mixed_image, self.label_2)
 
-    def local_thresholding(self):
+    def local_thresholding(self, image, window_size=(7, 7), threshold_margin=5):
         """
         Apply local thresholding to the input image.
 
         Parameters:
             image (numpy.ndarray): Input image.
+            window_size (tuple): Size of the local window. Default is (7, 7).
+            threshold_margin (int): Margin added to the local mean for thresholding. Default is 5.
 
         Returns:
             numpy.ndarray: Image with local thresholding applied.
         """
-        
-        image = self.image['result']  # gray scale image
+
         height, width = image.shape
         local_thresholded_image = np.zeros_like(image)
-        
 
         for i in range(height):
             for j in range(width):
-                # Extract a 7x7 window around the current pixel (without padding)
-                window = image[i-3:i+4, j-3:j+4]
-                
+                # Extract a window around the current pixel
+                window = image[max(0, i - window_size[0] // 2):min(height, i + window_size[0] // 2 + 1),
+                         max(0, j - window_size[1] // 2):min(width, j + window_size[1] // 2 + 1)]
+
                 # Calculate the local mean of the window
                 local_mean = np.mean(window.flatten())
-                
-                
-                # If the pixel value in the original image is greater than the mean value,
-                # set the pixel value in the local thresholded image to 255 (white), otherwise set it to 0 (black)
-                local_thresholded_image[i, j] = 255 if image[i, j] > local_mean-5 else 0 # 5 is the threshold safety margin
+
+                # Apply local thresholding
+                local_thresholded_image[i, j] = 255 if image[i, j] > local_mean - threshold_margin else 0
 
         return local_thresholded_image
 
-    def global_thresholding(self):
+    def global_thresholding(self, image, threshold=127):
         """
         Apply global thresholding to the input image.
 
@@ -630,8 +649,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         Returns:
             numpy.ndarray: Image with global thresholding applied.
         """
-        image = self.image['result']
-        threshold = 127
+
         height, width = image.shape
         thresholded_image = np.zeros_like(image, dtype=np.uint8)
         for i in range(height):
