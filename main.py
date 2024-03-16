@@ -62,8 +62,8 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.MIX_btn.clicked.connect(self.mix_images)
         self.normalize_btn.clicked.connect(self.normalize_image)
         self.apply_threshold_btn.clicked.connect(self.apply_threshold)
-        self.mix1_combo_box.currentIndexChanged.connect(self.plot_frequency_filter)
-        self.mix2_combo_box.currentIndexChanged.connect(self.plot_frequency_filter)
+        self.mix1_combo_box.currentIndexChanged.connect(self.plot_frequency_filter_1)
+        self.mix2_combo_box.currentIndexChanged.connect(self.plot_frequency_filter_2)
 
 
     def handle_mouse(self, event, label, type = 'original'):
@@ -122,6 +122,8 @@ class MainApp(QMainWindow, FORM_CLASS):
         # Create QImage from the numpy array
         q_image = QImage(image.data, image.shape[1], image.shape[0], QImage.Format_RGB888)
 
+        #clear label 
+        label.clear()
         # Set the pixmap to the label
         label.setPixmap(QPixmap.fromImage(q_image))
 
@@ -825,13 +827,12 @@ class MainApp(QMainWindow, FORM_CLASS):
 
         return filtered_image
 
-    def plot_frequency_filter(self):
-
+    def plot_frequency_filter_1(self):
         plot_1 = self.apply_frequency_filters_1(self.image["mix_1_before"], self.mix1_slider.value(), self.mix1_combo_box.currentText())
-        plot_2 = self.apply_frequency_filters_2(self.image["mix_2_before"], self.mix2_slider.value(), self.mix2_combo_box.currentText())
-        
-        self.display_image(plot_1, self.mix1_label)
-        self.display_image(plot_2, self.mix2_label)
+        self.display_image(plot_1, self.mix1_label)        
+    def plot_frequency_filter_2(self):
+            plot_2 = self.apply_frequency_filters_2(self.image["mix_2_before"], self.mix2_slider.value(), self.mix2_combo_box.currentText())
+            self.display_image(plot_2, self.mix2_label)
     
 
 def main():  # method to start app
