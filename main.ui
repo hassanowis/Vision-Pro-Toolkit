@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1289</width>
-    <height>932</height>
+    <height>961</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -430,7 +430,7 @@
        </attribute>
        <layout class="QGridLayout" name="gridLayout_3">
         <item row="0" column="1">
-         <widget class="QLabel" name="label_2">
+         <widget class="QLabel" name="mixed_label">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -467,17 +467,33 @@
             <item>
              <layout class="QVBoxLayout" name="verticalLayout_5">
               <item>
-               <widget class="QComboBox" name="comboBox"/>
+               <widget class="QComboBox" name="mix1_combo_box">
+                <item>
+                 <property name="text">
+                  <string>Choose Frequency Filter</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Low Pass Filter</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>High Pass Filter</string>
+                 </property>
+                </item>
+               </widget>
               </item>
               <item>
-               <widget class="QSlider" name="horizontalSlider">
+               <widget class="QSlider" name="mix1_slider">
                 <property name="orientation">
                  <enum>Qt::Horizontal</enum>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QLabel" name="label_8">
+               <widget class="QLabel" name="mix1_label">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -531,17 +547,33 @@
             <item>
              <layout class="QVBoxLayout" name="verticalLayout_8">
               <item>
-               <widget class="QComboBox" name="comboBox_2"/>
+               <widget class="QComboBox" name="mix2_combo_box">
+                <item>
+                 <property name="text">
+                  <string>Choose Frequency Filter</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Low Pass Filter</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>High Pass Filter</string>
+                 </property>
+                </item>
+               </widget>
               </item>
               <item>
-               <widget class="QSlider" name="horizontalSlider_2">
+               <widget class="QSlider" name="mix2_slider">
                 <property name="orientation">
                  <enum>Qt::Horizontal</enum>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QLabel" name="label_10">
+               <widget class="QLabel" name="mix2_label">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -604,7 +636,7 @@
      <x>0</x>
      <y>0</y>
      <width>1289</width>
-     <height>21</height>
+     <height>37</height>
     </rect>
    </property>
    <widget class="QMenu" name="menufile">

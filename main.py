@@ -41,6 +41,8 @@ class MainApp(QMainWindow, FORM_CLASS):
             "Normalized": False,
             "Threshold": 'None',
             "result": None,
+            "mix_1_before"  : None,
+            "mix_2_before"  : None,
             "mix_1": None,
             "mix_2": None,
         }
@@ -55,11 +57,13 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.process_btn.clicked.connect(self.process_image)
         self.clear_btn.clicked.connect(self.clear)
         self.equalize_btn.clicked.connect(self.equalize_image)
-        self.label_mix_1.mouseDoubleClickEvent = lambda event: self.handle_mouse(event, label=self.label_mix_1,type='mix_1' )
-        self.label_mix_2.mouseDoubleClickEvent = lambda event: self.handle_mouse(event, label = self.label_mix_2, type='mix_2' )
+        self.label_mix_1.mouseDoubleClickEvent = lambda event: self.handle_mouse(event, label=self.label_mix_1,type='mix_1_before')
+        self.label_mix_2.mouseDoubleClickEvent = lambda event: self.handle_mouse(event, label = self.label_mix_2, type='mix_2_before')
         self.MIX_btn.clicked.connect(self.mix_images)
         self.normalize_btn.clicked.connect(self.normalize_image)
         self.apply_threshold_btn.clicked.connect(self.apply_threshold)
+        self.mix1_combo_box.currentIndexChanged.connect(self.plot_frequency_filter)
+        self.mix2_combo_box.currentIndexChanged.connect(self.plot_frequency_filter)
 
 
     def handle_mouse(self, event, label, type = 'original'):
@@ -596,17 +600,19 @@ class MainApp(QMainWindow, FORM_CLASS):
 
         return fshift
     def mix_images(self):
-        if self.image['mix_1'] is None or self.image['mix_2'] is None:
+        if self.image['mix_1_before'] is None or self.image['mix_2_before'] is None:
             return
-        fourier_1 = self.fourier_transform(self.image['mix_1'])
-        fourier_2 = self.fourier_transform(self.image['mix_2'])
+    
+        
+        self.image['mix_1'] = self.apply_frequency_filters_1(self.image['mix_1_before'],self.mix1_slider.value(), self.mix1_combo_box.currentText())
+        self.image['mix_2'] = self.apply_frequency_filters_2(self.image['mix_2_before'], self.mix2_slider.value(),self.mix2_combo_box.currentText())
 
-        mixed_fourier = fourier_1 + fourier_2
+        mixed_fourier = self.image['mix_1'] + self.image['mix_2']
 
         mixed_image = np.fft.ifft2(mixed_fourier)
         mixed_image = np.abs(mixed_image)
 
-        self.display_image(mixed_image, self.label_2)
+        self.display_image(mixed_image, self.mixed_label)
 
     def local_thresholding(self, image, window_size=(7, 7), threshold_margin=5):
         """
@@ -731,13 +737,101 @@ class MainApp(QMainWindow, FORM_CLASS):
         # Display the histograms on the label
         label.setPixmap(histogram_pixmap)
 
+    def low_pass_filter(self, image, cutoff_frequency=0.1):
+        """
+        Apply low-pass filter to the input image.
+
+        Parameters:
+            image (numpy.ndarray): Input image.
+            cutoff_frequency (float): Cutoff frequency of the low-pass filter.
+
+        Returns:
+            numpy.ndarray: Image after applying low-pass filter.
+        """
+        # Convert the image to grayscale
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        # Apply Fourier transform
+        f = np.fft.fft2(image)
+        fshift = np.fft.fftshift(f)
+
+        # Create a mask for the low-pass filter
+        
+        rows, cols = image.shape
+        crow, ccol = rows // 2, cols // 2
+        mask = np.zeros((rows, cols), np.uint8)
+        mask[crow - int(crow * cutoff_frequency):crow + int(crow * cutoff_frequency),
+             ccol - int(ccol * cutoff_frequency):ccol + int(ccol * cutoff_frequency)] = 1
+
+        # Apply the mask to the Fourier transform
+        fshift = fshift * mask
+        
+
+        # # Apply inverse Fourier transform
+        # f_ishift = np.fft.ifftshift(fshift)
+        # image_filtered = np.fft.ifft2(f_ishift)
+        # image_filtered = np.abs(image_filtered)
+
+        return fshift
+    
+    def high_pass_filter(self, image, cutoff_frequency=0.1):
+        """
+        Apply high-pass filter to the input image.
+
+        Parameters:
+            image (numpy.ndarray): Input image.
+            cutoff_frequency (float): Cutoff frequency of the high-pass filter.
+
+        Returns:
+            numpy.ndarray: Image after applying high-pass filter.
+        """
+        # Convert the image to grayscale
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        # Apply Fourier transform
+        f = np.fft.fft2(image)
+        fshift = np.fft.fftshift(f)
+
+        # Create a mask for the high-pass filter
+        rows, cols = image.shape
+        crow, ccol = rows // 2, cols // 2
+        mask = np.ones((rows, cols), np.uint8)
+        mask[crow - int(crow * cutoff_frequency):crow + int(crow * cutoff_frequency),
+             ccol - int(ccol * cutoff_frequency):ccol + int(ccol * cutoff_frequency)] = 0
+
+        # Apply the mask to the Fourier transform
+        fshift = fshift * mask
+        # # Apply inverse Fourier transform
+        # f_ishift = np.fft.ifftshift(fshift)
+        # image_filtered = np.fft.ifft2(f_ishift)
+        # image_filtered = np.abs(image_filtered)
+
+        return fshift
+    
+    def apply_frequency_filters_1(self, image, cutoff_frequency, filter_type):
+        if filter_type == 'Low Pass Filter':
+            filtered_image = self.low_pass_filter(image, cutoff_frequency)
+        
+        else:
+            filtered_image = self.high_pass_filter(image, cutoff_frequency)
+
+        return filtered_image
 
 
+    def apply_frequency_filters_2(self, image, cutoff_frequency, filter_type):
+        if filter_type == 'Low Pass Filter':
+            filtered_image = self.low_pass_filter(image, cutoff_frequency)
+        
+        else:
+            filtered_image = self.high_pass_filter(image, cutoff_frequency)
 
+        return filtered_image
 
+    def plot_frequency_filter(self):
 
-
-
+        plot_1 = self.apply_frequency_filters_1(self.image["mix_1_before"], self.mix1_slider.value(), self.mix1_combo_box.currentText())
+        plot_2 = self.apply_frequency_filters_2(self.image["mix_2_before"], self.mix2_slider.value(), self.mix2_combo_box.currentText())
+        
+        self.display_image(plot_1, self.mix1_label)
+        self.display_image(plot_2, self.mix2_label)
     
 
 def main():  # method to start app

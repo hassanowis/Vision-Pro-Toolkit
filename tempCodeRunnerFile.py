@@ -1,1 +1,1 @@
-gaussian_filter
+display_image
