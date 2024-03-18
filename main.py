@@ -46,6 +46,8 @@ class MainApp(QMainWindow, FORM_CLASS):
             "mix_1": None,
             "mix_2": None,
         }
+        self.hide_visibility("noise")
+        self.hide_visibility("filter")
 
     def handle_buttons(self):
         self.insert_btn.triggered.connect(self.load_image)
@@ -65,12 +67,26 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.mix1_combo_box.currentIndexChanged.connect(self.plot_frequency_filter_1)
         self.mix2_combo_box.currentIndexChanged.connect(self.plot_frequency_filter_2)
 
+        self.mix1_slider.valueChanged.connect(self.plot_frequency_filter_1)
+        self.mix2_slider.valueChanged.connect(self.plot_frequency_filter_2)
+
 
     def handle_mouse(self, event, label, type = 'original'):
         if event.button() == Qt.LeftButton:
             self.load_image(label, type)
         
+    def hide_visibility(self, prefix, show_spacers=False, show_labels=False, show_text=False, k = 3):
+        for i in range(1, k):  # Assuming you have noise_spacer_1, noise_spacer_2, etc.
+            # spacer = getattr(self, f"{prefix}spacer{i}")
+            # spacer.setVisible(show_spacers)
 
+
+            param_lbl = getattr(self, f"{prefix}_param_lbl_{i}")
+            param_lbl.setVisible(show_labels)
+
+
+            param_txt = getattr(self, f"{prefix}_param_txt_{i}")
+            param_txt.setVisible(show_text)
 
     def load_image(self , label = None,type = 'original'):
         if not label:
@@ -143,10 +159,39 @@ class MainApp(QMainWindow, FORM_CLASS):
     def apply_noise(self):
         # Apply noise to the image
         self.image['Noise'] = self.noise_combo_box.currentText()
+        if self.image['Noise'] == 'None':
+            self.hide_visibility("noise")
+        elif self.image['Noise'] == 'Gaussian':
+            self.hide_visibility("noise", show_spacers=True, show_labels=True, show_text=True, k=3)
+            self.noise_param_lbl_1.setText('Mean')
+            self.noise_param_lbl_2.setText('Sigma')
+        elif self.image['Noise'] == 'Uniform':
+            self.hide_visibility("noise", show_spacers=True, show_labels=True, show_text=True, k=3)
+            self.noise_param_lbl_1.setText('Low')
+            self.noise_param_lbl_2.setText('High')
+        elif self.image['Noise'] == 'Salt and Pepper':
+            self.hide_visibility("noise", show_spacers=True, show_labels=True, show_text=True, k=3)
+            self.noise_param_lbl_1.setText('Salt Probability')
+            self.noise_param_lbl_2.setText('Pepper Probability')
+
 
     def apply_filter(self):
         # Apply filter to the image
         self.image['Filter'] = self.filter_combo_box.currentText()
+        if self.image['Filter'] == 'None':
+            self.hide_visibility("filter")
+        elif self.image['Filter'] == 'Average':
+            self.hide_visibility("filter")
+            self.hide_visibility("filter", show_spacers=True, show_labels=True, show_text=True, k=2)
+            self.filter_param_lbl_1.setText('Kernel Size')
+        elif self.image['Filter'] == 'Gaussian':
+            self.hide_visibility("filter", show_spacers=True, show_labels=True, show_text=True, k=3)
+            self.filter_param_lbl_1.setText('Kernel Size')
+            self.filter_param_lbl_2.setText('Sigma')
+        elif self.image['Filter'] == 'Median':
+            self.hide_visibility("filter")
+            self.hide_visibility("filter", show_spacers=True, show_labels=True, show_text=True, k=2)
+            self.filter_param_lbl_1.setText('Kernel Size')
 
     def apply_mask(self):
         # Apply mask to the image
@@ -207,23 +252,33 @@ class MainApp(QMainWindow, FORM_CLASS):
         if self.image['Noise'] == 'None':
             self.image['result'] = self.image['gray']
         elif self.image['Noise'] == 'Gaussian':
-            self.image['result'] = self.add_gaussian_noise(self.image['result'])
+            mean = int(self.noise_param_txt_1.text())
+            sigma = int(self.noise_param_txt_2.text())
+            self.image['result'] = self.add_gaussian_noise(self.image['result'], mean, sigma)
         elif self.image['Noise'] == 'Uniform':
-            self.image['result'] = self.add_uniform_noise(self.image['result'])
+            low = int(self.noise_param_txt_1.text())
+            high = int(self.noise_param_txt_2.text())
+            self.image['result'] = self.add_uniform_noise(self.image['result'], low, high)
         elif self.image['Noise'] == 'Salt and Pepper':
-            self.image['result'] = self.add_salt_and_pepper(self.image['result'])
+            salt_prob = float(self.noise_param_txt_1.text())
+            pepper_prob = float(self.noise_param_txt_2.text())
+            self.image['result'] = self.add_salt_and_pepper(self.image['result'], salt_prob, pepper_prob)
 
         self.image['result'] = self.image['result'].astype(np.uint8)
-        
+
         # Apply filter
         if self.image['Filter'] == 'None':
             self.image['result'] = self.image['result']
         elif self.image['Filter'] == 'Average':
-            self.image['result'] = self.average_filter(self.image['result'])
+            kernel_size = int(self.filter_param_txt_1.text())
+            self.image['result'] = self.average_filter(self.image['result'], (kernel_size, kernel_size))
         elif self.image['Filter'] == 'Gaussian':
-            self.image['result'] = self.gaussian_filter(self.image['result'])
+            kernel_size = int(self.filter_param_txt_1.text())
+            sigma = int(self.filter_param_txt_2.text())
+            self.image['result'] = self.gaussian_filter(self.image['result'], (kernel_size, kernel_size), sigma)
         elif self.image['Filter'] == 'Median':
-            self.image['result'] = self.median_filter(self.image['result'])
+            kernel_size = int(self.filter_param_txt_1.text())
+            self.image['result'] = self.median_filter(self.image['result'], (kernel_size, kernel_size))
 
         self.image['result'] = self.image['result'].astype(np.uint8)
 
@@ -239,6 +294,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         elif self.image['Mask'] == 'Canny':
             self.image['result'] = self.canny_edge_detection(self.image['result'])
 
+        self.display_image(self.image['result'], self.proceesed_image_lbl)
         self.display_image(self.image['result'], self.proceesed_image_lbl)
         self.plot_gray_histogram(self.image['result'])
         self.plot_gray_distribution_curve(self.image['result'])
@@ -606,8 +662,8 @@ class MainApp(QMainWindow, FORM_CLASS):
             return
     
         
-        self.image['mix_1'] = self.apply_frequency_filters_1(self.image['mix_1_before'],self.mix1_slider.value(), self.mix1_combo_box.currentText())
-        self.image['mix_2'] = self.apply_frequency_filters_2(self.image['mix_2_before'], self.mix2_slider.value(),self.mix2_combo_box.currentText())
+        self.image['mix_1'] = self.apply_frequency_filters_1(self.image['mix_1_before'],self.mix1_slider.value()/99, self.mix1_combo_box.currentText())
+        self.image['mix_2'] = self.apply_frequency_filters_2(self.image['mix_2_before'], self.mix2_slider.value()/99,self.mix2_combo_box.currentText())
 
         mixed_fourier = self.image['mix_1'] + self.image['mix_2']
 
@@ -739,7 +795,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         # Display the histograms on the label
         label.setPixmap(histogram_pixmap)
 
-    def low_pass_filter(self, image, cutoff_frequency=0.1):
+    def low_pass_filter(self, image,label, cutoff_frequency=0.1):
         """
         Apply low-pass filter to the input image.
 
@@ -770,12 +826,13 @@ class MainApp(QMainWindow, FORM_CLASS):
 
         # # Apply inverse Fourier transform
         # f_ishift = np.fft.ifftshift(fshift)
-        # image_filtered = np.fft.ifft2(f_ishift)
-        # image_filtered = np.abs(image_filtered)
+        image_filtered = np.fft.ifft2(fshift)
+        image_filtered = np.abs(image_filtered)
+        self.display_image(image_filtered, label)
 
         return fshift
     
-    def high_pass_filter(self, image, cutoff_frequency=0.1):
+    def high_pass_filter(self, image,label, cutoff_frequency=0.1):
         """
         Apply high-pass filter to the input image.
 
@@ -803,35 +860,37 @@ class MainApp(QMainWindow, FORM_CLASS):
         fshift = fshift * mask
         # # Apply inverse Fourier transform
         # f_ishift = np.fft.ifftshift(fshift)
-        # image_filtered = np.fft.ifft2(f_ishift)
-        # image_filtered = np.abs(image_filtered)
+        image_filtered = np.fft.ifft2(fshift)
+        image_filtered = np.abs(image_filtered)
+        self.display_image(image_filtered, label)
 
         return fshift
     
     def apply_frequency_filters_1(self, image, cutoff_frequency, filter_type):
         if filter_type == 'Low Pass Filter':
-            filtered_image = self.low_pass_filter(image, cutoff_frequency)
+            filtered_image = self.low_pass_filter(image,self.label_mix_1, cutoff_frequency)
         
         else:
-            filtered_image = self.high_pass_filter(image, cutoff_frequency)
+            filtered_image = self.high_pass_filter(image,self.label_mix_1, cutoff_frequency)
 
         return filtered_image
 
 
     def apply_frequency_filters_2(self, image, cutoff_frequency, filter_type):
         if filter_type == 'Low Pass Filter':
-            filtered_image = self.low_pass_filter(image, cutoff_frequency)
+            filtered_image = self.low_pass_filter(image,self.label_mix_2, cutoff_frequency)
         
         else:
-            filtered_image = self.high_pass_filter(image, cutoff_frequency)
+            filtered_image = self.high_pass_filter(image,self.label_mix_2, cutoff_frequency)
 
         return filtered_image
 
     def plot_frequency_filter_1(self):
-        plot_1 = self.apply_frequency_filters_1(self.image["mix_1_before"], self.mix1_slider.value(), self.mix1_combo_box.currentText())
+        print(self.mix1_slider.value())
+        plot_1 = self.apply_frequency_filters_1(self.image["mix_1_before"], self.mix1_slider.value()/99, self.mix1_combo_box.currentText())
         self.display_image(plot_1, self.mix1_label)        
     def plot_frequency_filter_2(self):
-            plot_2 = self.apply_frequency_filters_2(self.image["mix_2_before"], self.mix2_slider.value(), self.mix2_combo_box.currentText())
+            plot_2 = self.apply_frequency_filters_2(self.image["mix_2_before"], self.mix2_slider.value()/99, self.mix2_combo_box.currentText())
             self.display_image(plot_2, self.mix2_label)
     
 
