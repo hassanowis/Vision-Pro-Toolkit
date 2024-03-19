@@ -305,8 +305,12 @@ class MainApp(QMainWindow, FORM_CLASS):
 
         self.display_image(self.image['result'], self.proceesed_image_lbl)
         self.display_image(self.image['result'], self.proceesed_image_lbl)
-        self.plot_gray_histogram(self.image['result'])
-        self.plot_gray_distribution_curve(self.image['result'])
+        #plotting original image histogram and distribution curves
+        self.plot_gray_histogram(self.image['original'], self.histogram_lbl_2, "Original Image Histogram")
+        self.plot_gray_distribution_curve(self.image['original'], self.distribution_curve_lbl_2, "Original Image Distribution Curve")
+        #plotting processed image histogram and distribution curves
+        self.plot_gray_histogram(self.image['result'], self.histogram_lbl, "Processed Image Histogram")
+        self.plot_gray_distribution_curve(self.image['result'], self.distribution_curve_lbl, "Processed Image Distribution Curve")
         
 
     def add_uniform_noise(self, image, low=0, high=255*0.2):
@@ -524,49 +528,55 @@ class MainApp(QMainWindow, FORM_CLASS):
         normalized_img = ((img - img_min) / (img_max - img_min) * 255).astype('uint8')
         return normalized_img
     
-    def plot_gray_histogram(self, img):
+    def plot_gray_histogram(self, img, label, title):
         # Compute gray histogram
         hist = self.compute_gray_histogram(img)
 
         # Plot histogram
-        fig, ax = plt.subplots(figsize=(3.5, 3.5))
+        fig, ax = plt.subplots(figsize=(3, 3))
         ax.bar(np.arange(256), hist, color='blue', alpha=0.5)
-        ax.set_title('Gray Histogram')
+        ax.set_title(title, fontsize='small', color='black', fontweight='bold')
         ax.set_xlabel('Pixel Intensity')
         ax.set_ylabel('Frequency')
-        fig.tight_layout(pad=3)
+
+        # Adjust layout to ensure the plot occupies the entire space
+        fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
+        fig.tight_layout()
+
         # Convert the Matplotlib figure to a QPixmap
         canvas = FigureCanvas(fig)
         canvas.draw()
-        size = canvas.size()
-        width, height = size.width(), size.height()
         histogram_pixmap = QPixmap(canvas.grab())
 
         # Display the histogram on the label
-        self.histogram_lbl.setPixmap(histogram_pixmap)
+        label.setPixmap(histogram_pixmap)
 
-    def plot_gray_distribution_curve(self, img):
+
+
+    def plot_gray_distribution_curve(self, img,label, title):
         # Compute gray histogram
         hist = self.compute_gray_histogram(img)
         cdf = hist.cumsum()
         cdf_normalized = cdf / cdf.max()
 
         # Plot distribution curve (CDF)
-        fig, ax = plt.subplots(figsize=(3.5, 3.5))  # Adjust the size as needed
+        fig, ax = plt.subplots(figsize=(3, 3))  # Adjust the size as needed
         ax.plot(cdf_normalized, color='red')
-        ax.set_title('Distribution Curve (CDF)')
+        ax.set_title(title, fontsize='small', color='black', fontweight='bold')
         ax.set_xlabel('Pixel Intensity')
         ax.set_ylabel('Cumulative Frequency')
-        fig.tight_layout(pad=3)
+        
+        # Adjust layout to ensure the plot occupies the entire space
+        fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
+        fig.tight_layout()
+
         # Convert the Matplotlib figure to a QPixmap
         canvas = FigureCanvas(fig)
         canvas.draw()
-        size = canvas.size()
-        width, height = size.width(), size.height()
         distribution_curve_pixmap = QPixmap(canvas.grab())
 
         # Display the distribution curve on the label
-        self.distribution_curve_lbl.setPixmap(distribution_curve_pixmap)
+        label.setPixmap(distribution_curve_pixmap)
     
     def sobel_edge_detection(self, image):
         """
