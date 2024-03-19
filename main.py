@@ -51,6 +51,7 @@ class MainApp(QMainWindow, FORM_CLASS):
 
     def handle_buttons(self):
         self.insert_btn.triggered.connect(self.load_image)
+        self.color_combo_box.currentIndexChanged.connect(self.change_pre_process_image)
         self.noise_combo_box.currentIndexChanged.connect(self.apply_noise)
         self.filter_combo_box.currentIndexChanged.connect(self.apply_filter)
         self.mask_combo_box.currentIndexChanged.connect(self.apply_mask)
@@ -87,6 +88,14 @@ class MainApp(QMainWindow, FORM_CLASS):
 
             param_txt = getattr(self, f"{prefix}_param_txt_{i}")
             param_txt.setVisible(show_text)
+
+    def change_pre_process_image(self):
+        if self.color_combo_box.currentText() == 'RGB':
+            self.display_image(self.image['original'], self.pre_process_image_lbl)
+        elif self.color_combo_box.currentText() == 'Gray Scale':
+            self.display_image(self.image['gray'], self.pre_process_image_lbl)
+        elif self.color_combo_box.currentText() == 'Binary':
+            self.binary()
 
     def load_image(self , label = None,type = 'original'):
         if not label:
@@ -886,12 +895,15 @@ class MainApp(QMainWindow, FORM_CLASS):
         return filtered_image
 
     def plot_frequency_filter_1(self):
+        self.mix1_lbl.setText(str(self.mix1_slider.value()))
         print(self.mix1_slider.value())
         plot_1 = self.apply_frequency_filters_1(self.image["mix_1_before"], self.mix1_slider.value()/99, self.mix1_combo_box.currentText())
-        self.display_image(plot_1, self.mix1_label)        
+        self.display_image(plot_1, self.mix1_label)
+        
     def plot_frequency_filter_2(self):
-            plot_2 = self.apply_frequency_filters_2(self.image["mix_2_before"], self.mix2_slider.value()/99, self.mix2_combo_box.currentText())
-            self.display_image(plot_2, self.mix2_label)
+        self.mix2_lbl.setText(str(self.mix2_slider.value()))
+        plot_2 = self.apply_frequency_filters_2(self.image["mix_2_before"], self.mix2_slider.value()/99, self.mix2_combo_box.currentText())
+        self.display_image(plot_2, self.mix2_label)
     
 
 def main():  # method to start app
