@@ -1,21 +1,28 @@
-import sys
-import time
 from os import path
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel
-from PyQt5.QtGui import QPixmap, QImage, QPainter
+from PyQt5.QtWidgets import QApplication, QLabel
+from PyQt5.QtGui import QPixmap, QImage
 import cv2
-from PyQt5.QtCore import QTimer, Qt
+from PyQt5.QtCore import Qt
 import numpy as np
-import pandas as pd
-from scipy.ndimage import gaussian_filter
-from PyQt5 import QtCore
 from PyQt5.QtWidgets import *
 from PyQt5.uic import loadUiType
 import matplotlib.pyplot as plt
 import scipy as sp
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import sys
+from os import path
 
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+import scipy as sp
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap, QImage
+from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QApplication, QLabel
+from PyQt5.uic import loadUiType
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 FORM_CLASS, _ = loadUiType(
     path.join(path.dirname(__file__), "main.ui")
