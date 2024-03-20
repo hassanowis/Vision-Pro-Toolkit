@@ -161,6 +161,9 @@ class MainApp(QMainWindow, FORM_CLASS):
                     self.gray_scale()
                     self.plot_RGB_histogram(self.image['original'], self.rgb_histogram_lbl)
                     self.proceesed_image_lbl.clear()
+                    #plotting original image histogram and distribution curves
+                    self.plot_gray_histogram(self.image['original'], self.histogram_lbl_2, "Original Image Histogram")
+                    self.plot_gray_distribution_curve(self.image['original'], self.distribution_curve_lbl_2, "Original Image Distribution Curve")
                 else:
                     self.display_image(self.image[type], label)
                     
