@@ -46,14 +46,13 @@ class MainApp(QMainWindow, FORM_CLASS):
             "Normalized": False,
             "Threshold": 'None',
             "result": None,
-            "mix_1_before"  : None,
-            "mix_2_before"  : None,
+            "mix_1_before": None,
+            "mix_2_before": None,
             "mix_1": None,
             "mix_2": None,
         }
         self.hide_visibility("noise")
         self.hide_visibility("filter")
-
 
     # Function to handle button signals and initialize the application
     def handle_buttons(self):
@@ -70,8 +69,10 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.process_btn.clicked.connect(self.process_image)
         self.clear_btn.clicked.connect(self.clear)
         self.equalize_btn.clicked.connect(self.equalize_image)
-        self.label_mix_1.mouseDoubleClickEvent = lambda event: self.handle_mouse(event, label=self.label_mix_1,type='mix_1_before')
-        self.label_mix_2.mouseDoubleClickEvent = lambda event: self.handle_mouse(event, label = self.label_mix_2, type='mix_2_before')
+        self.label_mix_1.mouseDoubleClickEvent = lambda event: self.handle_mouse(event, label=self.label_mix_1,
+                                                                                 type='mix_1_before')
+        self.label_mix_2.mouseDoubleClickEvent = lambda event: self.handle_mouse(event, label=self.label_mix_2,
+                                                                                 type='mix_2_before')
         self.MIX_btn.clicked.connect(self.mix_images)
         self.normalize_btn.clicked.connect(self.normalize_image)
         self.apply_threshold_btn.clicked.connect(self.apply_threshold)
@@ -79,7 +80,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.mix2_combo_box.currentIndexChanged.connect(self.plot_frequency_filter_2)
         self.mix1_slider.valueChanged.connect(self.plot_frequency_filter_1)
         self.mix2_slider.valueChanged.connect(self.plot_frequency_filter_2)
-
 
     # Function to handle mouse events
     def handle_mouse(self, event, label, type='original'):
@@ -93,7 +93,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         """
         if event.button() == Qt.LeftButton:
             self.load_image(label, type)
-
 
     # Function to hide or show widgets related to noise and filter parameters
     def hide_visibility(self, prefix, show_spacers=False, show_labels=False, show_text=False, k=3):
@@ -113,7 +112,6 @@ class MainApp(QMainWindow, FORM_CLASS):
             param_txt = getattr(self, f"{prefix}_param_txt_{i}")
             param_txt.setVisible(show_text)
 
-
     # Function to change the preprocessing image based on the selected color mode
     def change_pre_process_image(self):
         """
@@ -126,8 +124,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         elif self.color_combo_box.currentText() == 'Binary':
             self.binary()
 
-
-
     # Function to load an image from file
     def load_image(self, label=None, type='original'):
         """
@@ -138,7 +134,6 @@ class MainApp(QMainWindow, FORM_CLASS):
             type (str): The type of the image. Default is 'original'.
         """
         if not label:
-            
             label = self.pre_process_image_lbl
         # Load image from file explorer
         file_dialog = QFileDialog(self)
@@ -161,12 +156,12 @@ class MainApp(QMainWindow, FORM_CLASS):
                     self.gray_scale()
                     self.plot_RGB_histogram(self.image['original'], self.rgb_histogram_lbl)
                     self.proceesed_image_lbl.clear()
-                    #plotting original image histogram and distribution curves
+                    # plotting original image histogram and distribution curves
                     self.plot_gray_histogram(self.image['original'], self.histogram_lbl_2, "Original Image Histogram")
-                    self.plot_gray_distribution_curve(self.image['original'], self.distribution_curve_lbl_2, "Original Image Distribution Curve")
+                    self.plot_gray_distribution_curve(self.image['original'], self.distribution_curve_lbl_2,
+                                                      "Original Image Distribution Curve")
                 else:
                     self.display_image(self.image[type], label)
-                    
 
     # Function to display an image on a QLabel
     def display_image(self, image, label):
@@ -193,7 +188,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         # Create QImage from the numpy array
         q_image = QImage(image.data, image.shape[1], image.shape[0], QImage.Format_RGB888)
 
-        #clear label 
+        # clear label
         label.clear()
         # Set the pixmap to the label
         label.setPixmap(QPixmap.fromImage(q_image))
@@ -207,7 +202,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.image["result"] = self.image["gray"]
         self.display_image(self.image["gray"], self.pre_process_image_lbl)
 
-
     # Function to convert image to binary
     def binary(self):
         """
@@ -216,7 +210,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.gray_scale()
         _, self.image["binary"] = cv2.threshold(self.image["gray"], 127, 255, cv2.THRESH_BINARY)
         self.display_image(self.image["binary"], self.pre_process_image_lbl)
-
 
     # Function to apply noise to the image
     def apply_noise(self):
@@ -239,7 +232,6 @@ class MainApp(QMainWindow, FORM_CLASS):
             self.noise_param_lbl_1.setText('Salt Probability')
             self.noise_param_lbl_2.setText('Pepper Probability')
 
-
     # Function to apply filter to the image based on the selected filter type
     def apply_filter(self):
         """
@@ -261,14 +253,12 @@ class MainApp(QMainWindow, FORM_CLASS):
             self.hide_visibility("filter", show_spacers=True, show_labels=True, show_text=True, k=2)
             self.filter_param_lbl_1.setText('Kernel Size')
 
-
     # Function to apply mask to the image
     def apply_mask(self):
         """
         Applies a mask to the image based on the selected mask type.
         """
         self.image['Mask'] = self.mask_combo_box.currentText()
-
 
     # Function to apply threshold to the image
     def apply_threshold(self):
@@ -288,7 +278,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         # Display the thresholded image
         self.display_image(self.image['result'], self.proceesed_image_lbl)
 
-
     # Function to handle changes in the threshold combo box
     def threshold_combo_change(self):
         """
@@ -301,14 +290,12 @@ class MainApp(QMainWindow, FORM_CLASS):
             self.threshold_slider.setRange(0, 255)
             self.threshold_slider.setValue(127)
 
-
     # Function to handle changes in the threshold slider
     def threshold_slider_change(self):
         """
         Updates the threshold label text based on the value of the threshold slider.
         """
         self.threshold_lbl.setText('Threshold Value: ' + str(self.threshold_slider.value()))
-
 
     # Function to clear the processed image and display the original gray scale image
     def clear(self):
@@ -317,7 +304,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         """
         self.image['result'] = self.image['gray']
         self.display_image(self.image['result'], self.proceesed_image_lbl)
-
 
     # Function to clear the image dictionary
     def clear_dict(self):
@@ -334,7 +320,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.image['Equalized'] = False
         self.image['Normalized'] = False
         self.image['Threshold'] = 'None'
-
 
     # Function to process the image with noise, filter, and mask
     def process_image(self):
@@ -391,14 +376,14 @@ class MainApp(QMainWindow, FORM_CLASS):
 
         self.display_image(self.image['result'], self.proceesed_image_lbl)
         self.display_image(self.image['result'], self.proceesed_image_lbl)
-        
-        #plotting processed image histogram and distribution curves
+
+        # plotting processed image histogram and distribution curves
         self.plot_gray_histogram(self.image['result'], self.histogram_lbl, "Processed Image Histogram")
-        self.plot_gray_distribution_curve(self.image['result'], self.distribution_curve_lbl, "Processed Image Distribution Curve")
-        
+        self.plot_gray_distribution_curve(self.image['result'], self.distribution_curve_lbl,
+                                          "Processed Image Distribution Curve")
 
     # Function to add uniform noise to the image
-    def add_uniform_noise(self, image, low=0, high=255*0.2):
+    def add_uniform_noise(self, image, low=0, high=255 * 0.2):
         """
         Adds uniform noise to the image.
 
@@ -406,7 +391,7 @@ class MainApp(QMainWindow, FORM_CLASS):
             image (numpy.ndarray): The input image.
             low (int): The lower bound of the uniform noise distribution. Default is 0.
             high (int): The upper bound of the uniform noise distribution. Default is 51 (20% of 255).
-        
+
         Returns:
             numpy.ndarray: The image with added uniform noise.
         """
@@ -418,9 +403,8 @@ class MainApp(QMainWindow, FORM_CLASS):
         noisy = (image) + noise
         return noisy
 
-
-     # Function to add gaussian noise to the image
-    def add_gaussian_noise(self, image, mean=0, sigma= 25):
+    # Function to add gaussian noise to the image
+    def add_gaussian_noise(self, image, mean=0, sigma=25):
         """
         Add Gaussian noise to the input image.
 
@@ -439,12 +423,11 @@ class MainApp(QMainWindow, FORM_CLASS):
         else:  # Image is RGB/BGR
             row, col, ch = image.shape
             gauss = np.random.normal(mean, sigma, (row, col, ch))
-            noisy = image + gauss   # Scale the noise intensity
+            noisy = image + gauss  # Scale the noise intensity
 
         # Clip values to [0, 255] and convert to uint8
         noisy = np.clip(noisy, 0, 255).astype(np.uint8)
         return noisy
-
 
     def add_salt_and_pepper(self, image, salt_prob=0.01, pepper_prob=0.01):
         """
@@ -469,7 +452,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         noisy_image[pepper_mask] = 0
         return noisy_image
 
-
     def average_filter(self, image, kernel_size=(3, 3)):
         """
         Apply average filter to the input image.
@@ -487,7 +469,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         # Perform convolution
         filtered_image = cv2.filter2D(image, -1, kernel, borderType=cv2.BORDER_REFLECT)
         return filtered_image.astype(np.uint8)
-
 
     def gaussian_filter(self, image, kernel_size=(3, 3), sigma=1):
         """
@@ -507,7 +488,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         # Perform convolution with the Gaussian kernel
         filtered_image = cv2.filter2D(image, -1, kernel)
         return filtered_image
-
 
     def gaussian_kernel(self, kernel_size=(3, 3), sigma=1):
         """
@@ -537,7 +517,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         kernel = np.exp(-(xx ** 2 + yy ** 2) / (2 * sigma ** 2))
         kernel /= np.sum(kernel)
         return kernel
-
 
     def median_filter(self, image, kernel_size=(3, 3)):
         """
@@ -579,7 +558,6 @@ class MainApp(QMainWindow, FORM_CLASS):
                 output_image[i - border_height, j - border_width] = median_value
         return output_image
 
-
     # Function to equalize the histogram of the image
     def equalize_image(self):
         """
@@ -600,7 +578,10 @@ class MainApp(QMainWindow, FORM_CLASS):
 
         # Display the result image
         self.display_image(equalized_image, self.proceesed_image_lbl)
-
+        # plotting processed image histogram and distribution curves
+        self.plot_gray_histogram(self.image['result'], self.histogram_lbl, "Processed Image Histogram")
+        self.plot_gray_distribution_curve(self.image['result'], self.distribution_curve_lbl,
+                                          "Processed Image Distribution Curve")
 
     # Function to compute the gray histogram of the image
     def compute_gray_histogram(self, image):
@@ -620,7 +601,6 @@ class MainApp(QMainWindow, FORM_CLASS):
                 hist[image[x, y]] += 1
         return hist
 
-
     # Function to perform histogram equalization on the image
     def image_equalization(self, img):
         """
@@ -637,7 +617,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         cdf_min = cdf.min()
         img_equalized = ((cdf[img] - cdf_min) * 255 / (img.size - cdf_min)).astype('uint8')
         return img_equalized
-
 
     # Function to normalize the pixel values of the image
     def normalize_image(self):
@@ -659,7 +638,10 @@ class MainApp(QMainWindow, FORM_CLASS):
 
         # Display the result image
         self.display_image(normalized_image, self.proceesed_image_lbl)
-
+        # plotting processed image histogram and distribution curves
+        self.plot_gray_histogram(self.image['result'], self.histogram_lbl, "Processed Image Histogram")
+        self.plot_gray_distribution_curve(self.image['result'], self.distribution_curve_lbl,
+                                          "Processed Image Distribution Curve")
 
     # Function to perform normalization on the image
     def image_normalization(self, img):
@@ -676,7 +658,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         img_max = np.max(img)
         normalized_img = ((img - img_min) / (img_max - img_min) * 255).astype('uint8')
         return normalized_img
-    
 
     # Function to plot the gray histogram of the image
     def plot_gray_histogram(self, img, label, title):
@@ -713,7 +694,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         # Display the histogram on the label
         label.setPixmap(histogram_pixmap)
 
-
     # Function to plot the gray distribution curve (CDF) of the image
     def plot_gray_distribution_curve(self, img, label, title):
         """
@@ -737,7 +717,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         ax.set_title(title, fontsize='small', color='black', fontweight='bold')
         ax.set_xlabel('Pixel Intensity')
         ax.set_ylabel('Cumulative Frequency')
-        
+
         # Adjust layout to ensure the plot occupies the entire space
         fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
         fig.tight_layout()
@@ -749,7 +729,6 @@ class MainApp(QMainWindow, FORM_CLASS):
 
         # Display the distribution curve on the label
         label.setPixmap(distribution_curve_pixmap)
-    
 
     def sobel_edge_detection(self, image):
         """
@@ -762,15 +741,14 @@ class MainApp(QMainWindow, FORM_CLASS):
             numpy.ndarray: Image with Sobel edge detection applied.
         """
         image = image / 255.0  # Normalize the image
-        kernel = np.array([[-1, 0, 1], 
+        kernel = np.array([[-1, 0, 1],
                            [-2, 0, 2],
-                            [-1, 0, 1]])  # Sobel kernel
+                           [-1, 0, 1]])  # Sobel kernel
         sobel_x = cv2.filter2D(image, -1, kernel)
         sobel_y = cv2.filter2D(image, -1, kernel.T)
         sobel = np.sqrt(sobel_x ** 2 + sobel_y ** 2)
         sobel = (sobel * 255).astype(np.uint8)
         return sobel
-    
 
     def roberts_edge_detection(self, image):
         """
@@ -792,7 +770,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         roberts = np.sqrt(roberts_x ** 2 + roberts_y ** 2)
         roberts = (roberts * 255).astype(np.uint8)
         return roberts
-    
 
     def prewitt_edge_detection(self, image):
         """
@@ -816,9 +793,8 @@ class MainApp(QMainWindow, FORM_CLASS):
         prewitt = np.sqrt(prewitt_x ** 2 + prewitt_y ** 2)
         prewitt = (prewitt * 255).astype(np.uint8)
         return prewitt
-    
 
-    def canny_edge_detection(self, image, low_threshold = 60, high_threshold = 200):
+    def canny_edge_detection(self, image, low_threshold=60, high_threshold=200):
         """
         Apply Canny edge detection to the input image.
 
@@ -832,7 +808,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         """
         canny = cv2.Canny(image, low_threshold, high_threshold)
         return canny
-    
 
     def fourier_transform(self, image):
         """
@@ -852,7 +827,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         f = np.fft.fft2(image)
         fshift = np.fft.fftshift(f)
         return fshift
-    
 
     def mix_images(self):
         """
@@ -865,14 +839,15 @@ class MainApp(QMainWindow, FORM_CLASS):
         """
         if self.image['mix_1_before'] is None or self.image['mix_2_before'] is None:
             return
-        
-        self.image['mix_1'] = self.apply_frequency_filters_1(self.image['mix_1_before'],self.mix1_slider.value()/99, self.mix1_combo_box.currentText())
-        self.image['mix_2'] = self.apply_frequency_filters_2(self.image['mix_2_before'], self.mix2_slider.value()/99,self.mix2_combo_box.currentText())
+
+        self.image['mix_1'] = self.apply_frequency_filters_1(self.image['mix_1_before'], self.mix1_slider.value() / 99,
+                                                             self.mix1_combo_box.currentText())
+        self.image['mix_2'] = self.apply_frequency_filters_2(self.image['mix_2_before'], self.mix2_slider.value() / 99,
+                                                             self.mix2_combo_box.currentText())
         mixed_fourier = self.image['mix_1'] + self.image['mix_2']
         mixed_image = np.fft.ifft2(mixed_fourier)
         mixed_image = np.abs(mixed_image)
         self.display_image(mixed_image, self.mixed_label)
-
 
     def local_thresholding(self, image, window_size=(7, 7), threshold_margin=5):
         """
@@ -903,7 +878,6 @@ class MainApp(QMainWindow, FORM_CLASS):
 
         return local_thresholded_image
 
-
     def global_thresholding(self, image, threshold=127):
         """
         Apply global thresholding to the input image.
@@ -923,7 +897,6 @@ class MainApp(QMainWindow, FORM_CLASS):
                 if image[i, j] > threshold:
                     thresholded_image[i, j] = 255
         return thresholded_image
-    
 
     def RGB_histograms(self, image):
         """
@@ -939,7 +912,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         g_hist = np.bincount(image[:, :, 1].ravel(), minlength=256)
         b_hist = np.bincount(image[:, :, 2].ravel(), minlength=256)
         return [r_hist, g_hist, b_hist]
-    
 
     def plot_RGB_histogram(self, image, label):
         """
@@ -996,8 +968,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         # Display the histograms on the label
         label.setPixmap(histogram_pixmap)
 
-
-    def low_pass_filter(self, image,label, cutoff_frequency=0.1):
+    def low_pass_filter(self, image, label, cutoff_frequency=0.1):
         """
         Apply low-pass filter to the input image.
 
@@ -1018,7 +989,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         crow, ccol = rows // 2, cols // 2
         mask = np.zeros((rows, cols), np.uint8)
         mask[crow - int(crow * cutoff_frequency):crow + int(crow * cutoff_frequency),
-             ccol - int(ccol * cutoff_frequency):ccol + int(ccol * cutoff_frequency)] = 1
+        ccol - int(ccol * cutoff_frequency):ccol + int(ccol * cutoff_frequency)] = 1
 
         # Apply the mask to the Fourier transform
         fshift = fshift * mask
@@ -1027,9 +998,8 @@ class MainApp(QMainWindow, FORM_CLASS):
         image_filtered = np.abs(image_filtered)
         self.display_image(image_filtered, label)
         return fshift
-    
 
-    def high_pass_filter(self, image,label, cutoff_frequency=0.1):
+    def high_pass_filter(self, image, label, cutoff_frequency=0.1):
         """
         Apply high-pass filter to the input image.
 
@@ -1051,7 +1021,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         crow, ccol = rows // 2, cols // 2
         mask = np.ones((rows, cols), np.uint8)
         mask[crow - int(crow * cutoff_frequency):crow + int(crow * cutoff_frequency),
-             ccol - int(ccol * cutoff_frequency):ccol + int(ccol * cutoff_frequency)] = 0
+        ccol - int(ccol * cutoff_frequency):ccol + int(ccol * cutoff_frequency)] = 0
 
         # Apply the mask to the Fourier transform
         fshift = fshift * mask
@@ -1061,7 +1031,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.display_image(image_filtered, label)
 
         return fshift
-    
 
     def apply_frequency_filters_1(self, image, cutoff_frequency, filter_type):
         """
@@ -1076,13 +1045,12 @@ class MainApp(QMainWindow, FORM_CLASS):
             numpy.ndarray: The filtered image.
         """
         if filter_type == 'Low Pass Filter':
-            filtered_image = self.low_pass_filter(image,self.label_mix_1, cutoff_frequency)
-        
+            filtered_image = self.low_pass_filter(image, self.label_mix_1, cutoff_frequency)
+
         else:
-            filtered_image = self.high_pass_filter(image,self.label_mix_1, cutoff_frequency)
+            filtered_image = self.high_pass_filter(image, self.label_mix_1, cutoff_frequency)
 
         return filtered_image
-
 
     def apply_frequency_filters_2(self, image, cutoff_frequency, filter_type):
         """
@@ -1097,10 +1065,10 @@ class MainApp(QMainWindow, FORM_CLASS):
             numpy.ndarray: The filtered image.
         """
         if filter_type == 'Low Pass Filter':
-            filtered_image = self.low_pass_filter(image,self.label_mix_2, cutoff_frequency)
-        
+            filtered_image = self.low_pass_filter(image, self.label_mix_2, cutoff_frequency)
+
         else:
-            filtered_image = self.high_pass_filter(image,self.label_mix_2, cutoff_frequency)
+            filtered_image = self.high_pass_filter(image, self.label_mix_2, cutoff_frequency)
 
         return filtered_image
 
@@ -1112,9 +1080,9 @@ class MainApp(QMainWindow, FORM_CLASS):
             None
         """
         self.mix1_lbl.setText(str(self.mix1_slider.value()))
-        plot_1 = self.apply_frequency_filters_1(self.image["mix_1_before"], self.mix1_slider.value()/99, self.mix1_combo_box.currentText())
+        plot_1 = self.apply_frequency_filters_1(self.image["mix_1_before"], self.mix1_slider.value() / 99,
+                                                self.mix1_combo_box.currentText())
         self.display_image(plot_1, self.mix1_label)
-        
 
     def plot_frequency_filter_2(self):
         """
@@ -1124,9 +1092,10 @@ class MainApp(QMainWindow, FORM_CLASS):
             None
         """
         self.mix2_lbl.setText(str(self.mix2_slider.value()))
-        plot_2 = self.apply_frequency_filters_2(self.image["mix_2_before"], self.mix2_slider.value()/99, self.mix2_combo_box.currentText())
+        plot_2 = self.apply_frequency_filters_2(self.image["mix_2_before"], self.mix2_slider.value() / 99,
+                                                self.mix2_combo_box.currentText())
         self.display_image(plot_2, self.mix2_label)
-    
+
 
 def main():
     """
