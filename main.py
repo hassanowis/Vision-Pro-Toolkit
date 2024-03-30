@@ -1155,6 +1155,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         contour.display_contour(self.image_after_contour)
 
     def detect_shape(self):
+        # Apply edge detection
         gray_edge_detection_1 = cv2.cvtColor(self.image['edge_detection_1'], cv2.COLOR_BGR2GRAY)
         edged_image = self.canny_edge_detection(gray_edge_detection_1)
         detect = shapedetection(edged_image)
