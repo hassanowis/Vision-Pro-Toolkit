@@ -1136,6 +1136,23 @@ class MainApp(QMainWindow, FORM_CLASS):
                                                 self.mix2_combo_box.currentText())
         self.display_image(plot_2, self.mix2_label)
 
+    def generate_circle_contour(self, center, radius, num_points=100):
+        """
+        Generate the coordinates of a circle contour.
+
+        Parameters:
+        center (tuple): The (x, y) coordinates of the center of the circle.
+        radius (int): The radius of the circle.
+        num_points (int): The number of points to generate along the contour.
+
+        Returns:
+        np.array: An array of shape (num_points, 2) containing the (x, y) coordinates of the contour.
+        """
+        angles = np.linspace(0, 2 * np.pi, num_points)
+        x = center[0] + radius * np.cos(angles)
+        y = center[1] + radius * np.sin(angles)
+        return np.column_stack([x, y])
+
     def apply_contour(self):
         """
         Apply contour detection to the input image.
@@ -1145,14 +1162,26 @@ class MainApp(QMainWindow, FORM_CLASS):
         """
         if self.image['before_contour'] is None:
             return
-        # Create Initial Contour
-        initial_contour = np.array([[10, 10], [10, 350], [350, 350], [350, 10]])
+
+        # Get alpha, beta and gamma values
+        alpha = self.spinBox_alpha.value() * 0.001
+        beta = self.spinBox_beta.value() * 0.001
+        gamma = self.spinBox_gamma.value() * 0.001
+        num_iterations = self.spinBox_num_iterations.value()
+        print("Alpha: ", alpha, "Beta: ", beta, "Gamma: ", gamma, "Num Iterations: ", num_iterations)
+
+        # Calculate the center of the image
+        height, width = self.image['before_contour'].shape[:2]
+        center = (width // 2, height // 2)
+        # Create Initial Contour as a circle
+        initial_contour = self.generate_circle_contour(center, radius=120)
         # Create Active Contour object
-        contour = ActiveContour(self.image['before_contour'], initial_contour)
+        contour = ActiveContour(self.image['before_contour'], initial_contour, alpha, beta, gamma, num_iterations)
         # Apply active contour
-        contour.evolve_contour()
+        contour.evolve_contour_threaded(self.image_after_contour)
         # Draw the contours on the original image
-        contour.display_contour(self.image_after_contour)
+        # contour.display_contour(self.image_after_contour, initial_contour)
+        contour.display_image_with_contour(self.image['before_contour'], contour.contour, self.image_after_contour, initial_contour)
 
     def detect_shape(self):
         shape_type = self.shape_combox.currentText()
@@ -1165,12 +1194,17 @@ class MainApp(QMainWindow, FORM_CLASS):
         edged_image = self.canny_edge_detection(gray_edge_detection_1, 0, 30)
         print(edged_image.shape)
         detect = shapedetection(edged_image)
+<<<<<<< Updated upstream
         if shape_type == 'Lines':
             rhos, thetas = detect.hough_line_detection()
             masked_image = detect.draw_hough_lines(rhos, thetas , self.image['edge_detection_1'].copy())    
         elif shape_type == 'Circles':
             a,b,r = detect.hough_circle_detection(min_radius, max_radius)
             masked_image = detect.draw_hough_circles(a,b,r,self.image['edge_detection_1'].copy())
+=======
+        rhos, thetas = detect.hough_line_detection()
+        masked_image = detect.draw_hough_lines(rhos, thetas, self.image['edge_detection_1'].copy())
+>>>>>>> Stashed changes
         self.display_image(masked_image, self.masked_image)
 
 
