@@ -1,15 +1,3 @@
-from os import path
-import sys
-from PyQt5.QtWidgets import QApplication, QLabel
-from PyQt5.QtGui import QPixmap, QImage
-import cv2
-from PyQt5.QtCore import Qt
-import numpy as np
-from PyQt5.QtWidgets import *
-from PyQt5.uic import loadUiType
-import matplotlib.pyplot as plt
-import scipy as sp
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import sys
 from os import path
 
@@ -23,6 +11,8 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtWidgets import QApplication, QLabel
 from PyQt5.uic import loadUiType
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+
+from active_contour import ActiveContour
 
 FORM_CLASS, _ = loadUiType(
     path.join(path.dirname(__file__), "main.ui")
@@ -50,6 +40,8 @@ class MainApp(QMainWindow, FORM_CLASS):
             "mix_2_before": None,
             "mix_1": None,
             "mix_2": None,
+            "before_contour": None,
+            "contour": None,
         }
         self.hide_visibility("noise")
         self.hide_visibility("filter")
@@ -73,6 +65,10 @@ class MainApp(QMainWindow, FORM_CLASS):
                                                                                  type='mix_1_before')
         self.label_mix_2.mouseDoubleClickEvent = lambda event: self.handle_mouse(event, label=self.label_mix_2,
                                                                                  type='mix_2_before')
+        self.before_contour_image.mouseDoubleClickEvent = lambda event: self.handle_mouse(event,
+                                                                                          label=self.before_contour_image,
+                                                                                          type='before_contour')
+        self.apply_contour_btn.clicked.connect(self.apply_contour)
         self.MIX_btn.clicked.connect(self.mix_images)
         self.normalize_btn.clicked.connect(self.normalize_image)
         self.apply_threshold_btn.clicked.connect(self.apply_threshold)
@@ -1125,6 +1121,25 @@ class MainApp(QMainWindow, FORM_CLASS):
         plot_2 = self.apply_frequency_filters_2(self.image["mix_2_before"], self.mix2_slider.value() / 99,
                                                 self.mix2_combo_box.currentText())
         self.display_image(plot_2, self.mix2_label)
+
+    def apply_contour(self):
+        """
+        Apply contour detection to the input image.
+
+        Returns:
+            None
+        """
+        if self.image['before_contour'] is None:
+            return
+        # Convert the image to grayscale
+        image = cv2.cvtColor(self.image['before_contour'], cv2.COLOR_BGR2GRAY)
+        # Create Initial Contour
+        initial_contour = np.array([[10, 10], [10, 350], [350, 350], [350, 10]])
+        # Apply contour detection
+        contour = ActiveContour(self.image['before_contour'], initial_contour)
+        # Draw the contours on the original image
+        image_contour = cv2.drawContours(self.image['original'].copy(), contours, -1, (0, 255, 0), 2)
+        self.display_image(image_contour, self.proceesed_image_lbl)
 
 
 def main():
