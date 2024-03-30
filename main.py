@@ -83,7 +83,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         
         self.image_tobe_masked.mouseDoubleClickEvent = lambda event: self.handle_mouse(event, label=self.image_tobe_masked,type='edge_detection_1')
         self.MIX_btn.clicked.connect(self.mix_images)
-        self.shapedetect_btn.clicked.connect(self.detect_shape)
+        self.shapedetect_btn.clicked.connect(self.detect_shape )
         self.normalize_btn.clicked.connect(self.normalize_image)
         self.apply_threshold_btn.clicked.connect(self.apply_threshold)
         self.mix1_combo_box.currentIndexChanged.connect(self.plot_frequency_filter_1)
@@ -805,7 +805,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         return prewitt
 
   
-    def canny_edge_detection(self, image, low_threshold=0, high_threshold=60):
+    def canny_edge_detection(self, image, low_threshold=0, high_threshold=30):
         """
         Apply Canny edge detection to the input image using a custom implementation.
 
@@ -1155,13 +1155,22 @@ class MainApp(QMainWindow, FORM_CLASS):
         contour.display_contour(self.image_after_contour)
 
     def detect_shape(self):
-        # Apply edge detection
-        # Convert the image to grayscale
+        shape_type = self.shape_combox.currentText()
+        min_radius = int(self.min_lineEdit.text())
+        max_radius = int(self.max_lineEdit.text())
+        print(min_radius, max_radius)
         gray_edge_detection_1 = cv2.cvtColor(self.image['edge_detection_1'], cv2.COLOR_BGR2GRAY)
-        edged_image = self.canny_edge_detection(gray_edge_detection_1)
+        # filtered_image = self.gaussian_filter(gray_edge_detection_1, (5, 5), 1)
+
+        edged_image = self.canny_edge_detection(gray_edge_detection_1, 0, 30)
+        print(edged_image.shape)
         detect = shapedetection(edged_image)
-        rhos, thetas = detect.hough_line_detection()
-        masked_image = detect.draw_hough_lines(rhos, thetas , self.image['edge_detection_1'].copy())    
+        if shape_type == 'Lines':
+            rhos, thetas = detect.hough_line_detection()
+            masked_image = detect.draw_hough_lines(rhos, thetas , self.image['edge_detection_1'].copy())    
+        elif shape_type == 'Circles':
+            a,b,r = detect.hough_circle_detection(min_radius, max_radius)
+            masked_image = detect.draw_hough_circles(a,b,r,self.image['edge_detection_1'].copy())
         self.display_image(masked_image, self.masked_image)
 
 
