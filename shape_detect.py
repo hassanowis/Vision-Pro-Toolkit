@@ -11,36 +11,20 @@ class shapedetection:
         diagonal = int(np.sqrt(height**2 + width**2))
         hough_space = np.zeros((2*diagonal, 180), dtype=np.uint64)
         edges_points = np.nonzero(self.edged_image)
+
+        cos_theta = np.cos(np.deg2rad(np.arange(180)))
+        sin_theta = np.sin(np.deg2rad(np.arange(180)))
+
         for i in range(len(edges_points[0])):
             x = edges_points[1][i]
             y = edges_points[0][i]
-            for theta in range(0, 180):
-                rho = int(x*np.cos(np.deg2rad(theta)) + y*np.sin(np.deg2rad(theta)))
-                hough_space[rho+diagonal, theta] += 1
+            rho_values = np.round(x * cos_theta + y * sin_theta).astype(int)
+            np.add.at(hough_space, (rho_values + diagonal, np.arange(180)), 1)
+
         rows, cols = np.where(hough_space >= threshold)
         diag = rows - diagonal
-        theta = cols
+        theta = cols        
         return diag, theta
-        
-        '''optimized lines'''
-        # height, width = self.edged_image.shape
-        # diagonal = int(np.sqrt(height**2 + width**2))
-        # hough_space = np.zeros((2*diagonal, 180), dtype=np.uint64)
-        # edges_points = np.nonzero(self.edged_image)
-
-        # cos_theta = np.cos(np.deg2rad(np.arange(180)))
-        # sin_theta = np.sin(np.deg2rad(np.arange(180)))
-
-        # for i in range(len(edges_points[0])):
-        #     x = edges_points[1][i]
-        #     y = edges_points[0][i]
-        #     rho_values = np.round(x * cos_theta + y * sin_theta).astype(int)
-        #     np.add.at(hough_space, (rho_values + diagonal, np.arange(180)), 1)
-
-        # rows, cols = np.where(hough_space >= threshold)
-        # diag = rows - diagonal
-        # theta = cols        
-        # return diag, theta
     def hough_circle_detection(self, min_radius=60, max_radius=100, threshold=100):
         edges_points = np.nonzero(self.edged_image)
         h, w = self.edged_image.shape
