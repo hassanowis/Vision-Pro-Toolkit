@@ -57,9 +57,12 @@ class ActiveContour:
             else:
                 image_gray = self.image
 
-            # Calculate external energy (gradient magnitude)
-            gradient = cv2.Sobel(image_gray, cv2.CV_64F, 1, 1, ksize=3)
-            external_energy = self.calculate_external_energy(image_gray, gradient)
+            # Calculate gradients in x and y directions
+            gradient_x = cv2.Sobel(image_gray, cv2.CV_64F, 1, 0, ksize=3)
+            gradient_y = cv2.Sobel(image_gray, cv2.CV_64F, 0, 1, ksize=3)
+
+            # Calculate magnitude of gradient at each point
+            external_energy = np.hypot(gradient_x, gradient_y)
 
             # Calculate internal energy points
             arc_length_param = self.calculate_arc_length_parameterization()
@@ -68,9 +71,15 @@ class ActiveContour:
             # Evolve the contour
             for iteration in range(self.iterations):
                 for i in range(len(self.contour)):
-                    x, y = self.contour[i]
+                    x, y = int(self.contour[i][0]), int(self.contour[i][1])
+                    # Ensure internal_energy_points has the same length as self.contour
+                    if len(internal_energy_points) != len(self.contour):
+                        internal_energy_points = np.pad(internal_energy_points,
+                                                        (0, len(self.contour) - len(internal_energy_points)),
+                                                        'constant')
+
                     # Calculate energy at the current point
-                    external_energy_current = external_energy[int(y), int(x)]
+                    external_energy_current = external_energy[x, y]
                     internal_energy_prev = internal_energy_points[i - 1] if i != 0 else 0
                     internal_energy_next = internal_energy_points[(i + 1) % len(self.contour)]
 
@@ -104,50 +113,44 @@ class ActiveContour:
         return arc_length_param
 
     def calculate_internal_energy(self, arc_length_param):
-        spline_term = (self.alpha * np.sqrt(arc_length_param) + self.beta * np.square(arc_length_param))
+        dv_ds = np.diff(arc_length_param)
+        dv2_ds2 = np.diff(dv_ds)
+        dv2_ds2 = np.insert(dv2_ds2, 0, 0)  # Pad with a zero at the beginning
+        spline_term = (self.alpha * dv_ds**2 + self.beta * dv2_ds2**2) / 2
         internal_energy_points = spline_term
         return internal_energy_points
 
-    def calculate_line_energy(self, image):
+    def calculate_line_energy(self, image, gradient_magnitude):
         # Ensure contour indices are integers
         contour_indices = self.contour.astype(int)
 
-        # Access intensity values of the image at contour points
-        intensity_values = image[contour_indices[:, 1], contour_indices[:, 0]]
-
-        # Calculate line energy
-        E_line = intensity_values.mean()  # Example calculation, adjust as needed
-
+        # Calculate line energy based on gradient magnitude
+        E_line = gradient_magnitude[contour_indices[:, 1], contour_indices[:, 0]]
         return E_line
 
     def calculate_edge_energy(self, gradient_magnitude):
+        # Ensure contour indices are integers
+        contour_indices = self.contour.astype(int)
+
         # Calculate edge energy based on gradient magnitude
-        E_edge = -gradient_magnitude[self.contour[:, 1], self.contour[:, 0]]
+        E_edge = gradient_magnitude[contour_indices[:, 1], contour_indices[:, 0]]
         return E_edge
 
-    def calculate_termination_energy(self, image):
-        # Calculate termination energy based on curvature of level lines
-        # Smooth the image slightly
-        smoothed_image = cv2.GaussianBlur(image, (5, 5), sigmaX=0.5)
-        # Calculate gradients
-        dx = cv2.Sobel(smoothed_image, cv2.CV_64F, 1, 0, ksize=3)
-        dy = cv2.Sobel(smoothed_image, cv2.CV_64F, 0, 1, ksize=3)
-        # Calculate curvature
-        d2x = cv2.Sobel(dx, cv2.CV_64F, 1, 0, ksize=3)
-        d2y = cv2.Sobel(dy, cv2.CV_64F, 0, 1, ksize=3)
-        d2xy = cv2.Sobel(dx, cv2.CV_64F, 0, 1, ksize=3)
-        curvature = (d2x * d2y - d2xy ** 2) / (dx ** 2 + dy ** 2) ** 1.5
-        # Compute energy based on curvature
-        E_term = curvature[self.contour[:, 1], self.contour[:, 0]]
+    def calculate_termination_energy(self, curvature):
+        # Ensure contour indices are integers
+        contour_indices = self.contour.astype(int)
+
+        # Calculate termination energy based on curvature
+        E_term = curvature[contour_indices[:, 1], contour_indices[:, 0]]
         return E_term
 
     def calculate_external_energy(self, image, gradient_magnitude):
         # Calculate energy for lines, edges, and terminations
-        E_line = self.calculate_line_energy(image)
+        E_line = self.calculate_line_energy(image, gradient_magnitude)
         E_edge = self.calculate_edge_energy(gradient_magnitude)
         E_term = self.calculate_termination_energy(image)
 
-        # Combine energy functionals with weights
+        # Combine energy functions with weights
         E_external = self.w_line * E_line + self.w_edge * E_edge + self.w_term * E_term
         return E_external
 
