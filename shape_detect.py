@@ -21,19 +21,43 @@ class shapedetection:
         diag = rows - diagonal
         theta = cols
         return diag, theta
+        
+        '''optimized lines'''
+        # height, width = self.edged_image.shape
+        # diagonal = int(np.sqrt(height**2 + width**2))
+        # hough_space = np.zeros((2*diagonal, 180), dtype=np.uint64)
+        # edges_points = np.nonzero(self.edged_image)
+
+        # cos_theta = np.cos(np.deg2rad(np.arange(180)))
+        # sin_theta = np.sin(np.deg2rad(np.arange(180)))
+
+        # for i in range(len(edges_points[0])):
+        #     x = edges_points[1][i]
+        #     y = edges_points[0][i]
+        #     rho_values = np.round(x * cos_theta + y * sin_theta).astype(int)
+        #     np.add.at(hough_space, (rho_values + diagonal, np.arange(180)), 1)
+
+        # rows, cols = np.where(hough_space >= threshold)
+        # diag = rows - diagonal
+        # theta = cols        
+        # return diag, theta
     def hough_circle_detection(self, min_radius=60, max_radius=100, threshold=100):
-        height, width = self.edged_image.shape
-        hough_space = np.zeros((height, width, max_radius - min_radius + 1), dtype=np.uint64)
         edges_points = np.nonzero(self.edged_image)
-        for i in range(len(edges_points[0])):
-            x = edges_points[0][i]
-            y = edges_points[1][i]
-            for r in range(min_radius, max_radius):
-                for theta in range(0, 360):
-                    a = int(x - r*np.cos(np.deg2rad(theta)))
-                    b = int(y - r*np.sin(np.deg2rad(theta)))
-                    if a >= 0 and a < width and b >= 0 and b < height:
-                        hough_space[b, a, r - min_radius] += 1
+        h, w = self.edged_image.shape
+        hough_space = np.zeros((h, w, max_radius - min_radius + 1), dtype=np.uint64)
+        x_points, y_points = edges_points
+
+        cos_theta = np.cos(np.deg2rad(np.arange(360)))
+        sin_theta = np.sin(np.deg2rad(np.arange(360)))
+
+        for r in range(min_radius, max_radius + 1):
+            for theta in range(360):
+                a = np.round(x_points - r * cos_theta[theta]).astype(int)
+                b = np.round(y_points - r * sin_theta[theta]).astype(int)
+                valid_indices = np.where((a >= 0) & (a < w) & (b >= 0) & (b < h))
+                a_valid, b_valid = a[valid_indices], b[valid_indices]
+                hough_space[b_valid, a_valid, r - min_radius] += 1
+
         a, b, radius = np.where(hough_space >= threshold)
         return a, b, radius + min_radius
     def draw_hough_circles(self, a, b, radius, edged_image):
