@@ -14,7 +14,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout">
+   <layout class="QGridLayout" name="gridLayout_4">
     <item row="0" column="0">
      <widget class="QTabWidget" name="tabWidget">
       <property name="minimumSize">
@@ -550,7 +550,7 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
 }</string>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -1367,7 +1367,7 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
        <attribute name="title">
         <string>Active Contour</string>
        </attribute>
-       <layout class="QGridLayout" name="gridLayout_4">
+       <layout class="QGridLayout" name="gridLayout">
         <item row="0" column="0">
          <layout class="QHBoxLayout" name="horizontalLayout_23">
           <item>
@@ -1410,7 +1410,20 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
                    </widget>
                   </item>
                   <item>
-                   <widget class="QSpinBox" name="spinBox_alpha"/>
+                   <widget class="QSpinBox" name="spinBox_alpha">
+                    <property name="minimum">
+                     <number>1</number>
+                    </property>
+                    <property name="maximum">
+                     <number>1000</number>
+                    </property>
+                    <property name="singleStep">
+                     <number>10</number>
+                    </property>
+                    <property name="value">
+                     <number>100</number>
+                    </property>
+                   </widget>
                   </item>
                  </layout>
                 </item>
@@ -1424,7 +1437,20 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
                    </widget>
                   </item>
                   <item>
-                   <widget class="QSpinBox" name="spinBox_beta"/>
+                   <widget class="QSpinBox" name="spinBox_beta">
+                    <property name="minimum">
+                     <number>1</number>
+                    </property>
+                    <property name="maximum">
+                     <number>1000</number>
+                    </property>
+                    <property name="singleStep">
+                     <number>10</number>
+                    </property>
+                    <property name="value">
+                     <number>100</number>
+                    </property>
+                   </widget>
                   </item>
                  </layout>
                 </item>
@@ -1438,7 +1464,44 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
                    </widget>
                   </item>
                   <item>
-                   <widget class="QSpinBox" name="spinBox_gamma"/>
+                   <widget class="QSpinBox" name="spinBox_gamma">
+                    <property name="minimum">
+                     <number>1</number>
+                    </property>
+                    <property name="maximum">
+                     <number>1000</number>
+                    </property>
+                    <property name="singleStep">
+                     <number>10</number>
+                    </property>
+                    <property name="value">
+                     <number>10</number>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_24">
+                  <item>
+                   <widget class="QLabel" name="label_17">
+                    <property name="text">
+                     <string>Number of Iterations</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QSpinBox" name="spinBox_num_iterations">
+                    <property name="minimum">
+                     <number>1000</number>
+                    </property>
+                    <property name="maximum">
+                     <number>10000</number>
+                    </property>
+                    <property name="singleStep">
+                     <number>1000</number>
+                    </property>
+                   </widget>
                   </item>
                  </layout>
                 </item>
@@ -1483,6 +1546,19 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
                <string/>
               </property>
              </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
             </item>
             <item>
              <widget class="QLabel" name="image_after_contour">

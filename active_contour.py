@@ -1,11 +1,13 @@
 import cv2
 import numpy as np
+import time
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap, QPainter, QPen
+from PyQt5.QtGui import QPixmap, QPainter, QPen, QImage
+import threading
 
 
 class ActiveContour:
-    def __init__(self, image, initial_contour, alpha=0.01, beta=0.1, gamma=0.01, iterations=1000):
+    def __init__(self, image, initial_contour, alpha=0.01, beta=0.1, gamma=0.01, iterations=1000, w_line=1.0, w_edge=1.0, w_term=1.0):
         """
         Initialize the Active Contour Model.
 
@@ -18,52 +20,136 @@ class ActiveContour:
             iterations (int): Number of iterations for contour evolution. Default is 1000.
         """
         self.image = image
+        self.initial_contour = initial_contour.astype(np.float32)
         self.contour = initial_contour.astype(np.float32)
         self.alpha = alpha
         self.beta = beta
         self.gamma = gamma
+        self.w_line = w_line
+        self.w_edge = w_edge
+        self.w_term = w_term
         self.iterations = iterations
 
-    def evolve_contour(self):
+    def evolve_contour_threaded(self, label, display_every_n_iterations=100):
         """
         Evolve the Active Contour Model (snake) using the greedy algorithm.
         """
-        # Convert image to grayscale if it's not already
-        if len(self.image.shape) == 3:
-            image_gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
-        else:
-            image_gray = self.image
 
-        # Calculate external energy (gradient magnitude)
-        gradient = cv2.Sobel(image_gray, cv2.CV_64F, 1, 1, ksize=3)
-        external_energy = self.alpha * np.abs(gradient)
+        def evolve_contour_worker():
+            # Check if the image and initial contour are not None
+            if self.image is None or self.contour is None:
+                print("Image or initial contour is None.")
+                return
 
-        # Calculate internal energy (distance between points)
-        internal_energy = self.beta * np.sum(np.square(np.diff(self.contour, axis=0)))
+            # Check if the initial contour has at least one point
+            if len(self.contour) < 1:
+                print("Initial contour has less than one point.")
+                return
 
-        # Initialize internal energy points
-        internal_energy_points = np.zeros_like(self.contour)
-        print(internal_energy_points.shape)
-        print(self.contour.shape)
-        # Evolve the contour
-        for _ in range(self.iterations):
-            for i in range(len(self.contour)):
-                x, y = self.contour[i]
-                print(i,_)
-                # Calculate energy at the current point
-                external_energy_current = external_energy[int(y), int(x)]
-                internal_energy_prev = internal_energy if i == 0 else internal_energy_points[i - 1]
-                internal_energy_next = internal_energy if i == len(self.contour) - 1 else internal_energy_points[i - 1]
+            # Check if alpha, beta, gamma, and iterations are positive numbers
+            if self.alpha <= 0 or self.beta <= 0 or self.gamma <= 0 or self.iterations <= 0:
+                print("Alpha, beta, gamma, and iterations should be positive numbers.")
+                return
 
-                # Update the point
-                self.contour[i] += self.gamma * (external_energy_current + internal_energy_prev + internal_energy_next)
+            # Convert image to grayscale if it's not already
+            if len(self.image.shape) == 3:
+                image_gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+            else:
+                image_gray = self.image
 
-                # Clip to image boundaries
-                self.contour[i, 0] = np.clip(self.contour[i, 0], 0, image_gray.shape[1] - 1)
-                self.contour[i, 1] = np.clip(self.contour[i, 1], 0, image_gray.shape[0] - 1)
+            # Calculate external energy (gradient magnitude)
+            gradient = cv2.Sobel(image_gray, cv2.CV_64F, 1, 1, ksize=3)
+            external_energy = self.calculate_external_energy(image_gray, gradient)
 
-            # Update internal energy for the next iteration
-            internal_energy_points = self.beta * np.sum(np.square(np.diff(self.contour, axis=0)))
+            # Calculate internal energy points
+            arc_length_param = self.calculate_arc_length_parameterization()
+            internal_energy_points = self.calculate_internal_energy(arc_length_param)
+
+            # Evolve the contour
+            for iteration in range(self.iterations):
+                for i in range(len(self.contour)):
+                    x, y = self.contour[i]
+                    # Calculate energy at the current point
+                    external_energy_current = external_energy[int(y), int(x)]
+                    internal_energy_prev = internal_energy_points[i - 1] if i != 0 else 0
+                    internal_energy_next = internal_energy_points[(i + 1) % len(self.contour)]
+
+                    # Update the point
+                    self.contour[i] += self.gamma * (external_energy_current + internal_energy_prev + internal_energy_next)
+
+                    # Clip to image boundaries
+                    self.contour[i, 0] = np.clip(self.contour[i, 0], 0, image_gray.shape[1] - 1)
+                    self.contour[i, 1] = np.clip(self.contour[i, 1], 0, image_gray.shape[0] - 1)
+
+                # Update internal energy for the next iteration
+                internal_energy_points = self.calculate_internal_energy(arc_length_param)
+
+                # Display the contour every n iterations
+                if iteration % display_every_n_iterations == 0:
+                    self.display_image_with_contour(self.image, self.contour, label, self.initial_contour)
+                    time.sleep(0.3)
+            print("Contour evolution completed.")
+            # print("Final contour:", self.contour)
+
+        # Create a new thread for contour evolution
+        contour_thread = threading.Thread(target=evolve_contour_worker)
+
+        # Start the thread
+        contour_thread.start()
+
+    def calculate_arc_length_parameterization(self):
+        segment_lengths = np.linalg.norm(np.diff(self.contour, axis=0), axis=1)
+        cumulative_lengths = np.insert(np.cumsum(segment_lengths), 0, 0)
+        arc_length_param = cumulative_lengths / cumulative_lengths[-1]
+        return arc_length_param
+
+    def calculate_internal_energy(self, arc_length_param):
+        spline_term = (self.alpha * np.sqrt(arc_length_param) + self.beta * np.square(arc_length_param))
+        internal_energy_points = spline_term
+        return internal_energy_points
+
+    def calculate_line_energy(self, image):
+        # Ensure contour indices are integers
+        contour_indices = self.contour.astype(int)
+
+        # Access intensity values of the image at contour points
+        intensity_values = image[contour_indices[:, 1], contour_indices[:, 0]]
+
+        # Calculate line energy
+        E_line = intensity_values.mean()  # Example calculation, adjust as needed
+
+        return E_line
+
+    def calculate_edge_energy(self, gradient_magnitude):
+        # Calculate edge energy based on gradient magnitude
+        E_edge = -gradient_magnitude[self.contour[:, 1], self.contour[:, 0]]
+        return E_edge
+
+    def calculate_termination_energy(self, image):
+        # Calculate termination energy based on curvature of level lines
+        # Smooth the image slightly
+        smoothed_image = cv2.GaussianBlur(image, (5, 5), sigmaX=0.5)
+        # Calculate gradients
+        dx = cv2.Sobel(smoothed_image, cv2.CV_64F, 1, 0, ksize=3)
+        dy = cv2.Sobel(smoothed_image, cv2.CV_64F, 0, 1, ksize=3)
+        # Calculate curvature
+        d2x = cv2.Sobel(dx, cv2.CV_64F, 1, 0, ksize=3)
+        d2y = cv2.Sobel(dy, cv2.CV_64F, 0, 1, ksize=3)
+        d2xy = cv2.Sobel(dx, cv2.CV_64F, 0, 1, ksize=3)
+        curvature = (d2x * d2y - d2xy ** 2) / (dx ** 2 + dy ** 2) ** 1.5
+        # Compute energy based on curvature
+        E_term = curvature[self.contour[:, 1], self.contour[:, 0]]
+        return E_term
+
+    def calculate_external_energy(self, image, gradient_magnitude):
+        # Calculate energy for lines, edges, and terminations
+        E_line = self.calculate_line_energy(image)
+        E_edge = self.calculate_edge_energy(gradient_magnitude)
+        E_term = self.calculate_termination_energy(image)
+
+        # Combine energy functionals with weights
+        E_external = self.w_line * E_line + self.w_edge * E_edge + self.w_term * E_term
+        return E_external
 
     def compute_chain_code(self):
         """
@@ -104,23 +190,83 @@ class ActiveContour:
         area = cv2.countNonZero(mask)
         return area
 
-    def display_contour(self, label):
+    def display_contour(self, label, initial_contour=None):
         """
         Display the image with the contour overlay.
         """
+        # Convert numpy array to QImage
+        height, width = self.image.shape[:2]
+        bytesPerLine = 3 * width
+        image = QImage(self.image.data, width, height, bytesPerLine, QImage.Format_RGB888).rgbSwapped()
 
-        pixmap = QPixmap.fromImage(self.image)
+        pixmap = QPixmap.fromImage(image)
         painter = QPainter(pixmap)
         pen = QPen()
         pen.setColor(Qt.green)
         pen.setWidth(2)
         painter.setPen(pen)
 
-        for i in range(len(self.contour) - 1):
+        # Draw the evolved contour
+        for i in range(len(self.contour)):
             x1, y1 = int(self.contour[i][0]), int(self.contour[i][1])
-            x2, y2 = int(self.contour[i + 1][0]), int(self.contour[i + 1][1])
+            x2, y2 = int(self.contour[(i + 1) % len(self.contour)][0]), int(
+                self.contour[(i + 1) % len(self.contour)][1])
             painter.drawLine(x1, y1, x2, y2)
+
+        # Draw the initial contour if it's provided
+        if initial_contour is not None:
+            pen.setColor(Qt.red)  # Change the color for the initial contour
+            painter.setPen(pen)
+            for i in range(len(initial_contour)):
+                x1, y1 = int(initial_contour[i][0]), int(initial_contour[i][1])
+                x2, y2 = int(initial_contour[(i + 1) % len(initial_contour)][0]), int(
+                    initial_contour[(i + 1) % len(initial_contour)][1])
+                painter.drawLine(x1, y1, x2, y2)
 
         label.setPixmap(pixmap)
         label.setGeometry(0, 0, pixmap.width(), pixmap.height())
         label.show()
+
+    def display_image_with_contour(self, image, contour, label, initial_contour=None):
+        """
+        Displays the given image with contour overlaid on the specified label.
+
+        Parameters:
+            image (numpy.ndarray): The original image data.
+            contour (numpy.ndarray): The contour data.
+            label (QLabel): The label to display the image with contour overlay.
+        """
+        # Convert contour to numpy array
+        contour = np.array(contour, dtype=np.int32)
+        initial_contour = np.array(initial_contour, dtype=np.int32)
+        # Convert the original image to RGB (assuming it's in BGR format)
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        # Draw the contour and the intial contour on the image
+        cv2.polylines(image_rgb, [contour], isClosed=True, color=(255, 0, 0), thickness=2)
+
+        # Check if the initial contour is provided
+        if initial_contour is not None:
+            cv2.polylines(image_rgb, [initial_contour], isClosed=True, color=(0, 255, 0), thickness=1)
+
+        # Check if the image needs normalization and conversion
+        if image_rgb.dtype != np.uint8:
+            if np.max(image_rgb) <= 1.0:
+                image_rgb = (image_rgb * 255).astype(np.uint8)  # Normalize and convert to uint8
+            else:
+                image_rgb = image_rgb.astype(np.uint8)  # Convert to uint8 without normalization
+
+        # Resize the image to fit the label
+        image_resized = cv2.resize(image_rgb, (label.width(), label.height()))
+
+        # Convert BGR to RGB
+        image_resized = cv2.cvtColor(image_resized, cv2.COLOR_BGR2RGB)
+
+        # Create QImage from the numpy array
+        q_image = QImage(image_resized.data, image_resized.shape[1], image_resized.shape[0], QImage.Format_RGB888)
+
+        # Clear label
+        label.clear()
+
+        # Set the pixmap to the label
+        label.setPixmap(QPixmap.fromImage(q_image))
