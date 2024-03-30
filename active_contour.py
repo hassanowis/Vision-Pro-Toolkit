@@ -1,5 +1,8 @@
 import cv2
 import numpy as np
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap, QPainter, QPen
+
 
 class ActiveContour:
     def __init__(self, image, initial_contour, alpha=0.01, beta=0.1, gamma=0.01, iterations=1000):
@@ -38,15 +41,19 @@ class ActiveContour:
         # Calculate internal energy (distance between points)
         internal_energy = self.beta * np.sum(np.square(np.diff(self.contour, axis=0)))
 
+        # Initialize internal energy points
+        internal_energy_points = np.zeros_like(self.contour)
+        print(internal_energy_points.shape)
+        print(self.contour.shape)
         # Evolve the contour
         for _ in range(self.iterations):
             for i in range(len(self.contour)):
                 x, y = self.contour[i]
-
+                print(i,_)
                 # Calculate energy at the current point
                 external_energy_current = external_energy[int(y), int(x)]
                 internal_energy_prev = internal_energy if i == 0 else internal_energy_points[i - 1]
-                internal_energy_next = internal_energy if i == len(self.contour) - 1 else internal_energy_points[i]
+                internal_energy_next = internal_energy if i == len(self.contour) - 1 else internal_energy_points[i - 1]
 
                 # Update the point
                 self.contour[i] += self.gamma * (external_energy_current + internal_energy_prev + internal_energy_next)
@@ -96,3 +103,24 @@ class ActiveContour:
         cv2.drawContours(mask, [self.contour.astype(np.int32)], -1, 255, thickness=cv2.FILLED)
         area = cv2.countNonZero(mask)
         return area
+
+    def display_contour(self, label):
+        """
+        Display the image with the contour overlay.
+        """
+
+        pixmap = QPixmap.fromImage(self.image)
+        painter = QPainter(pixmap)
+        pen = QPen()
+        pen.setColor(Qt.green)
+        pen.setWidth(2)
+        painter.setPen(pen)
+
+        for i in range(len(self.contour) - 1):
+            x1, y1 = int(self.contour[i][0]), int(self.contour[i][1])
+            x2, y2 = int(self.contour[i + 1][0]), int(self.contour[i + 1][1])
+            painter.drawLine(x1, y1, x2, y2)
+
+        label.setPixmap(pixmap)
+        label.setGeometry(0, 0, pixmap.width(), pixmap.height())
+        label.show()
