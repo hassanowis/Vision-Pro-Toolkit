@@ -1194,17 +1194,17 @@ class MainApp(QMainWindow, FORM_CLASS):
         edged_image = self.canny_edge_detection(gray_edge_detection_1, 0, 30)
         print(edged_image.shape)
         detect = shapedetection(edged_image)
-<<<<<<< Updated upstream
+# <<<<<<< Updated upstream
         if shape_type == 'Lines':
             rhos, thetas = detect.hough_line_detection()
             masked_image = detect.draw_hough_lines(rhos, thetas , self.image['edge_detection_1'].copy())    
         elif shape_type == 'Circles':
             a,b,r = detect.hough_circle_detection(min_radius, max_radius)
             masked_image = detect.draw_hough_circles(a,b,r,self.image['edge_detection_1'].copy())
-=======
+# =======
         rhos, thetas = detect.hough_line_detection()
         masked_image = detect.draw_hough_lines(rhos, thetas, self.image['edge_detection_1'].copy())
->>>>>>> Stashed changes
+# >>>>>>> Stashed changes
         self.display_image(masked_image, self.masked_image)
 
 
