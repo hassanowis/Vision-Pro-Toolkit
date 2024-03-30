@@ -794,20 +794,50 @@ class MainApp(QMainWindow, FORM_CLASS):
         prewitt = (prewitt * 255).astype(np.uint8)
         return prewitt
 
-    def canny_edge_detection(self, image, low_threshold=60, high_threshold=200):
+  
+    def canny_edge_detection(self, image, low_threshold=0, high_threshold=60):
         """
-        Apply Canny edge detection to the input image.
+        Apply Canny edge detection to the input image using a custom implementation.
 
         Parameters:
             image (numpy.ndarray): Input image.
-            low_threshold (float): Low threshold for the hysteresis procedure.
-            high_threshold (float): High threshold for the hysteresis procedure.
+            low_threshold (int): Low threshold for the hysteresis procedure.
+            high_threshold (int): High threshold for the hysteresis procedure.
 
         Returns:
             numpy.ndarray: Image with Canny edge detection applied.
         """
-        canny = cv2.Canny(image, low_threshold, high_threshold)
-        return canny
+        # Step 1: Apply Gaussian blur to the image
+        blurred = cv2.GaussianBlur(image, (3, 3), 0)
+
+        # Step 2: Calculate gradient intensity and direction
+        dx = cv2.Sobel(blurred, cv2.CV_64F, 1, 0, ksize=3)
+        dy = cv2.Sobel(blurred, cv2.CV_64F, 0, 1, ksize=3)
+        gradient_magnitude = np.sqrt(dx**2 + dy**2)
+        gradient_direction = np.arctan2(dy, dx) * (180 / np.pi)
+
+        # Step 3: Non-maximum suppression
+        suppressed = np.zeros_like(gradient_magnitude)
+        for i in range(1, gradient_magnitude.shape[0] - 1):
+            for j in range(1, gradient_magnitude.shape[1] - 1):
+                direction = gradient_direction[i, j]
+                if (0 <= direction < 22.5) or (157.5 <= direction <= 180):
+                    neighbors = [gradient_magnitude[i, j+1], gradient_magnitude[i, j-1]]
+                elif (22.5 <= direction < 67.5):
+                    neighbors = [gradient_magnitude[i-1, j-1], gradient_magnitude[i+1, j+1]]
+                elif (67.5 <= direction < 112.5):
+                    neighbors = [gradient_magnitude[i-1, j], gradient_magnitude[i+1, j]]
+                else:
+                    neighbors = [gradient_magnitude[i-1, j+1], gradient_magnitude[i+1, j-1]]
+                if gradient_magnitude[i, j] >= max(neighbors):
+                    suppressed[i, j] = gradient_magnitude[i, j]
+
+        # Step 4: Apply double thresholding and edge tracking by hysteresis
+        strong_edges = (suppressed > high_threshold).astype(np.uint8) * 255
+        weak_edges = ((suppressed >= low_threshold) & (suppressed <= high_threshold)).astype(np.uint8) * 255
+        hysteresis_edges = cv2.bitwise_and(strong_edges, cv2.dilate(weak_edges, None))
+
+        return hysteresis_edges
 
     def fourier_transform(self, image):
         """
