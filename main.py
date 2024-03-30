@@ -1,6 +1,18 @@
+from os import path
+import sys
+from PyQt5.QtWidgets import QApplication, QLabel
+from PyQt5.QtGui import QPixmap, QImage
+import cv2
+from PyQt5.QtCore import Qt
+import numpy as np
+from PyQt5.QtWidgets import *
+from PyQt5.uic import loadUiType
+import matplotlib.pyplot as plt
+import scipy as sp
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import sys
 from os import path
-
+from shape_detect import shapedetection
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,9 +23,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtWidgets import QApplication, QLabel
 from PyQt5.uic import loadUiType
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-
 from active_contour import ActiveContour
-
 FORM_CLASS, _ = loadUiType(
     path.join(path.dirname(__file__), "main.ui")
 )  # connects the Ui file with the Python file
@@ -42,6 +52,7 @@ class MainApp(QMainWindow, FORM_CLASS):
             "mix_2": None,
             "before_contour": None,
             "contour": None,
+            "edge_detection_1": None,
         }
         self.hide_visibility("noise")
         self.hide_visibility("filter")
@@ -69,7 +80,10 @@ class MainApp(QMainWindow, FORM_CLASS):
                                                                                           label=self.before_contour_image,
                                                                                           type='before_contour')
         self.apply_contour_btn.clicked.connect(self.apply_contour)
+        
+        self.image_tobe_masked.mouseDoubleClickEvent = lambda event: self.handle_mouse(event, label=self.image_tobe_masked,type='edge_detection_1')
         self.MIX_btn.clicked.connect(self.mix_images)
+        self.shapedetect_btn.clicked.connect(self.detect_shape)
         self.normalize_btn.clicked.connect(self.normalize_image)
         self.apply_threshold_btn.clicked.connect(self.apply_threshold)
         self.mix1_combo_box.currentIndexChanged.connect(self.plot_frequency_filter_1)
@@ -1131,15 +1145,24 @@ class MainApp(QMainWindow, FORM_CLASS):
         """
         if self.image['before_contour'] is None:
             return
-        # Convert the image to grayscale
-        image = cv2.cvtColor(self.image['before_contour'], cv2.COLOR_BGR2GRAY)
         # Create Initial Contour
         initial_contour = np.array([[10, 10], [10, 350], [350, 350], [350, 10]])
-        # Apply contour detection
+        # Create Active Contour object
         contour = ActiveContour(self.image['before_contour'], initial_contour)
+        # Apply active contour
+        contour.evolve_contour()
         # Draw the contours on the original image
-        image_contour = cv2.drawContours(self.image['original'].copy(), contours, -1, (0, 255, 0), 2)
-        self.display_image(image_contour, self.proceesed_image_lbl)
+        contour.display_contour(self.image_after_contour)
+
+    def detect_shape(self):
+        # Apply edge detection
+        # Convert the image to grayscale
+        gray_edge_detection_1 = cv2.cvtColor(self.image['edge_detection_1'], cv2.COLOR_BGR2GRAY)
+        edged_image = self.canny_edge_detection(gray_edge_detection_1)
+        detect = shapedetection(edged_image)
+        rhos, thetas = detect.hough_line_detection()
+        masked_image = detect.draw_hough_lines(rhos, thetas , self.image['edge_detection_1'].copy())    
+        self.display_image(masked_image, self.masked_image)
 
 
 def main():
