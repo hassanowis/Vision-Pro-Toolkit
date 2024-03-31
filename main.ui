@@ -15,7 +15,7 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_4">
-    <item row="0" column="0">
+    <item row="0" column="1">
      <widget class="QTabWidget" name="tabWidget">
       <property name="minimumSize">
        <size>
@@ -550,7 +550,7 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
 }</string>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -1173,9 +1173,9 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
        </attribute>
        <layout class="QGridLayout" name="gridLayout_3">
         <item row="0" column="0">
-         <layout class="QHBoxLayout" name="horizontalLayout_18">
+         <layout class="QHBoxLayout" name="horizontalLayout_26">
           <item>
-           <layout class="QVBoxLayout" name="verticalLayout_21">
+           <layout class="QVBoxLayout" name="verticalLayout_11">
             <item>
              <widget class="QLabel" name="label">
               <property name="font">
@@ -1219,88 +1219,73 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
              </layout>
             </item>
             <item>
-             <layout class="QVBoxLayout" name="verticalLayout_16">
+             <layout class="QHBoxLayout" name="horizontalLayout_24">
               <item>
-               <widget class="QLabel" name="label_7">
+               <widget class="QLabel" name="min_lbl">
                 <property name="text">
                  <string>min radius</string>
                 </property>
                </widget>
               </item>
               <item>
-               <layout class="QVBoxLayout" name="verticalLayout_11">
-                <item>
-                 <widget class="QLineEdit" name="min_lineEdit"/>
-                </item>
-               </layout>
+               <widget class="QSpinBox" name="spinBox_min">
+                <property name="maximum">
+                 <number>200</number>
+                </property>
+               </widget>
               </item>
              </layout>
             </item>
             <item>
-             <layout class="QVBoxLayout" name="verticalLayout_17">
+             <layout class="QHBoxLayout" name="horizontalLayout_25">
               <item>
-               <widget class="QLabel" name="label_9">
+               <widget class="QLabel" name="max_lbl">
                 <property name="text">
                  <string>max radius</string>
                 </property>
                </widget>
               </item>
               <item>
-               <layout class="QVBoxLayout" name="verticalLayout_18">
-                <item>
-                 <widget class="QLineEdit" name="max_lineEdit"/>
-                </item>
-               </layout>
+               <widget class="QSpinBox" name="spinBox_max">
+                <property name="maximum">
+                 <number>200</number>
+                </property>
+               </widget>
               </item>
              </layout>
             </item>
             <item>
-             <layout class="QVBoxLayout" name="verticalLayout_19">
+             <layout class="QHBoxLayout" name="horizontalLayout_18">
               <item>
                <widget class="QLabel" name="label_11">
                 <property name="text">
-                 <string>Lower Edge Threshold</string>
+                 <string>Threshold</string>
                 </property>
                </widget>
               </item>
               <item>
-               <layout class="QVBoxLayout" name="verticalLayout_20">
-                <item>
-                 <widget class="QSlider" name="horizontalSlider_3">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="label_8">
-                  <property name="text">
-                   <string>Higher Edge Threshold</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QSlider" name="horizontalSlider">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="shapedetect_btn">
-                  <property name="font">
-                   <font>
-                    <pointsize>18</pointsize>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>Apply </string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
+               <widget class="QSpinBox" name="spinBox_threshold">
+                <property name="maximum">
+                 <number>500</number>
+                </property>
+                <property name="singleStep">
+                 <number>10</number>
+                </property>
+               </widget>
               </item>
              </layout>
+            </item>
+            <item>
+             <widget class="QPushButton" name="shapedetect_btn">
+              <property name="font">
+               <font>
+                <pointsize>18</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>Apply </string>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
@@ -1362,9 +1347,9 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
        </attribute>
        <layout class="QGridLayout" name="gridLayout">
         <item row="0" column="0">
-         <layout class="QHBoxLayout" name="horizontalLayout_23">
+         <layout class="QHBoxLayout" name="horizontalLayout_27">
           <item>
-           <layout class="QVBoxLayout" name="verticalLayout_23">
+           <layout class="QVBoxLayout" name="verticalLayout_17">
             <item>
              <layout class="QVBoxLayout" name="verticalLayout_22">
               <item>
@@ -1475,6 +1460,62 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
                  </layout>
                 </item>
                </layout>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_23">
+              <item>
+               <widget class="QLabel" name="area_lbl">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Area:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="perimeter_lbl">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Perimeter:</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout_16">
+              <item>
+               <widget class="QLabel" name="chaincode_len_lbl">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Length of ChainCode</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="chaincode_lbl">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>ChainCode</string>
+                </property>
+               </widget>
               </item>
              </layout>
             </item>
@@ -2079,7 +2120,7 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
      <x>0</x>
      <y>0</y>
      <width>1262</width>
-     <height>26</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menufile">

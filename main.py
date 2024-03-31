@@ -43,9 +43,9 @@ import cv2
 from scipy.ndimage import gaussian_filter
 from PIL import Image, ImageDraw
 
-
 # from skimage.filters import sobel
 from scipy.interpolate import RectBivariateSpline
+
 FORM_CLASS, _ = loadUiType(
     path.join(path.dirname(__file__), "main.ui")
 )  # connects the Ui file with the Python file
@@ -83,7 +83,11 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.before_contour_image.mouseReleaseEvent = self.mouseReleaseEvent
         self.dragging = False
         self.center = None
-        self.control_points = []  # List to store control points
+        self.control_points = None  # List to store control points
+        self.min_lbl.setVisible(False)
+        self.max_lbl.setVisible(False)
+        self.spinBox_min.setVisible(False)
+        self.spinBox_max.setVisible(False)
 
     # Function to handle button signals and initialize the application
     def handle_buttons(self):
@@ -99,6 +103,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.threshold_slider.valueChanged.connect(self.threshold_slider_change)
         self.process_btn.clicked.connect(self.process_image)
         self.clear_btn.clicked.connect(self.clear)
+        self.shape_combox.currentIndexChanged.connect(self.show_hide_lbl_spinbox)
         self.equalize_btn.clicked.connect(self.equalize_image)
         self.label_mix_1.mouseDoubleClickEvent = lambda event: self.handle_mouse(event, label=self.label_mix_1,
                                                                                  type='mix_1_before')
@@ -108,8 +113,10 @@ class MainApp(QMainWindow, FORM_CLASS):
                                                                                           label=self.before_contour_image,
                                                                                           type='before_contour')
         self.apply_contour_btn.clicked.connect(self.apply_contour)
-        
-        self.image_tobe_masked.mouseDoubleClickEvent = lambda event: self.handle_mouse(event, label=self.image_tobe_masked,type='edge_detection_1')
+
+        self.image_tobe_masked.mouseDoubleClickEvent = lambda event: self.handle_mouse(event,
+                                                                                       label=self.image_tobe_masked,
+                                                                                       type='edge_detection_1')
         self.MIX_btn.clicked.connect(self.mix_images)
         self.shapedetect_btn.clicked.connect(self.detect_shape)
         self.normalize_btn.clicked.connect(self.normalize_image)
@@ -149,6 +156,18 @@ class MainApp(QMainWindow, FORM_CLASS):
             param_lbl.setVisible(show_labels)
             param_txt = getattr(self, f"{prefix}_param_txt_{i}")
             param_txt.setVisible(show_text)
+
+    def show_hide_lbl_spinbox(self):
+        if self.shape_combox.currentText() != "Lines":
+            self.min_lbl.setVisible(True)
+            self.max_lbl.setVisible(True)
+            self.spinBox_min.setVisible(True)
+            self.spinBox_max.setVisible(True)
+        else:
+            self.min_lbl.setVisible(False)
+            self.max_lbl.setVisible(False)
+            self.spinBox_min.setVisible(False)
+            self.spinBox_max.setVisible(False)
 
     # Function to change the preprocessing image based on the selected color mode
     def change_pre_process_image(self):
@@ -240,44 +259,43 @@ class MainApp(QMainWindow, FORM_CLASS):
         if self.dragging:
             if self.image["before_contour"] is not None:
                 image_with_contour = self.image["before_contour"].copy()
-                radius = int(np.sqrt((event.x() - self.center[0])**2 + (event.y() - self.center[1])**2))
+                radius = int(np.sqrt((event.x() - self.center[0]) ** 2 + (event.y() - self.center[1]) ** 2))
                 cv2.circle(image_with_contour, self.center, radius, (0, 255, 0), 2)
                 self.control_points = self.calculate_control_points(self.center, radius)
                 # print(control_points)
                 for point in self.control_points:
-                    cv2.circle(image_with_contour, (int(point[0]), int(point[1])), radius=2, color=(255, 0, 0), thickness=-1)  # Draw a filled circle for each control point
+                    cv2.circle(image_with_contour, (int(point[0]), int(point[1])), radius=2, color=(255, 0, 0),
+                               thickness=-1)  # Draw a filled circle for each control point
                 self.display_image(image_with_contour, self.before_contour_image)
-
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.dragging = False
 
     def calculate_control_points(self, center, radius, num_points=50):
-        theta = np.linspace(0, 2*np.pi, num_points)
+        theta = np.linspace(0, 2 * np.pi, num_points)
         x = center[0] + radius * np.cos(theta)
         y = center[1] + radius * np.sin(theta)
         control_points = np.column_stack((x, y))
         return control_points
-    
 
-    def ActiveContourSnake(self,image, snake, alpha=0.05, beta=0.01,w_line=0, w_edge=1, gamma=0.1, convergence=0.1):
-        
+    def ActiveContourSnake(self, image, snake, alpha=0.05, beta=0.01, w_line=0, w_edge=1, gamma=0.1, convergence=0.1):
+
         convergence_order = 16
         max_move = 1.0
         img = img_as_float(image)
         float_dtype = _supported_float_type(image.dtype)
         img = img.astype(float_dtype, copy=False)
         edges = [sobel(img)]
-        img = w_line*img + w_edge*edges[0]
+        img = w_line * img + w_edge * edges[0]
 
         # Interpolate for smoothness:
         interpolated_img = RectBivariateSpline(np.arange(img.shape[1]),
-                                np.arange(img.shape[0]),
-                                img.T, kx=2, ky=2, s=0)
+                                               np.arange(img.shape[0]),
+                                               img.T, kx=2, ky=2, s=0)
 
         snake_coords = snake[:, ::-1]
-        x_coords= snake_coords[:, 0].astype(float_dtype)
+        x_coords = snake_coords[:, 0].astype(float_dtype)
         y_coords = snake_coords[:, 1].astype(float_dtype)
         n = len(x_coords)
         x_prev = np.empty((convergence_order, n), dtype=float_dtype)
@@ -286,13 +304,13 @@ class MainApp(QMainWindow, FORM_CLASS):
         # Build snake shape matrix for Euler equation in double precision
         eye_n = np.eye(n, dtype=float)
         a = (np.roll(eye_n, -1, axis=0)
-            + np.roll(eye_n, -1, axis=1)
-            - 2 * eye_n)  # second order derivative, central difference
+             + np.roll(eye_n, -1, axis=1)
+             - 2 * eye_n)  # second order derivative, central difference
         b = (np.roll(eye_n, -2, axis=0)
-            + np.roll(eye_n, -2, axis=1)
-            - 4 * np.roll(eye_n, -1, axis=0)
-            - 4 * np.roll(eye_n, -1, axis=1)
-            + 6 * eye_n)  # fourth order derivative, central difference
+             + np.roll(eye_n, -2, axis=1)
+             - 4 * np.roll(eye_n, -1, axis=0)
+             - 4 * np.roll(eye_n, -1, axis=1)
+             + 6 * eye_n)  # fourth order derivative, central difference
         A = -alpha * a + beta * b
 
         # implicit spline energy minimization and use float_dtype
@@ -303,8 +321,8 @@ class MainApp(QMainWindow, FORM_CLASS):
         for i in range(2500):
             fx = interpolated_img(x_coords, y_coords, dx=1, grid=False).astype(float_dtype, copy=False)
             fy = interpolated_img(x_coords, y_coords, dy=1, grid=False).astype(float_dtype, copy=False)
-            xn = inv @ (gamma*x_coords + fx)
-            yn = inv @ (gamma*y_coords + fy)
+            xn = inv @ (gamma * x_coords + fx)
+            yn = inv @ (gamma * y_coords + fy)
 
             # Movements are capped to max_px_move per iteration:
             dx = max_move * np.tanh(xn - x_coords)
@@ -319,12 +337,11 @@ class MainApp(QMainWindow, FORM_CLASS):
                 y_prev[j, :] = y_coords
             else:
                 dist = np.min(np.max(np.abs(x_prev - x_coords[None, :])
-                                    + np.abs(y_prev - y_coords[None, :]), 1))
+                                     + np.abs(y_prev - y_coords[None, :]), 1))
                 if dist < convergence:
                     break
 
         return np.stack([y_coords, x_coords], axis=1)
-
 
     def ActiveContourGreedy(self, image, snake, alpha=0.01, beta=0.01, w_line=0, w_edge=1, gamma=0.1, convergence=0.1):
         convergence_order = 16
@@ -333,15 +350,15 @@ class MainApp(QMainWindow, FORM_CLASS):
         float_dtype = _supported_float_type(image.dtype)
         img = img.astype(float_dtype, copy=False)
         edges = [sobel(img)]
-        img = w_line*img + w_edge*edges[0]
+        img = w_line * img + w_edge * edges[0]
 
         # Interpolate for smoothness:
         interpolated_img = RectBivariateSpline(np.arange(img.shape[1]),
-                                    np.arange(img.shape[0]),
-                                    img.T, kx=2, ky=2, s=0)
+                                               np.arange(img.shape[0]),
+                                               img.T, kx=2, ky=2, s=0)
 
         snake_coords = snake[:, ::-1]
-        x_coords= snake_coords[:, 0].astype(float_dtype)
+        x_coords = snake_coords[:, 0].astype(float_dtype)
         y_coords = snake_coords[:, 1].astype(float_dtype)
         n = len(x_coords)
         x_prev = np.empty((convergence_order, n), dtype=float_dtype)
@@ -356,7 +373,7 @@ class MainApp(QMainWindow, FORM_CLASS):
             # Update snake coordinates
             x_coords += alpha * gradient_x + beta * (np.roll(x_coords, -1) - x_coords)
             y_coords += alpha * gradient_y + beta * (np.roll(y_coords, -1) - y_coords)
-            
+
             # Convergence criteria needs to compare to a number of previous configurations since oscillations can occur.
             j = i % (convergence_order + 1)
             if j < convergence_order:
@@ -364,84 +381,79 @@ class MainApp(QMainWindow, FORM_CLASS):
                 y_prev[j, :] = y_coords
             else:
                 dist = np.min(np.max(np.abs(x_prev - x_coords[None, :])
-                                    + np.abs(y_prev - y_coords[None, :]), 1))
+                                     + np.abs(y_prev - y_coords[None, :]), 1))
                 if dist < convergence:
                     break
 
         return np.stack([y_coords, x_coords], axis=1)
 
-
-
-
-
-    
     def apply_contour_algorithm(self):
         if self.image["before_contour"] is not None and self.control_points is not None:
             # Convert the image to grayscale if necessary
             grayscale_image = cv2.cvtColor(self.image["before_contour"], cv2.COLOR_BGR2GRAY)
-            
+
             # Ensure the image is in the correct data type
-            grayscale_image = np.asarray(grayscale_image, dtype=np.uint8)           
-            
+            grayscale_image = np.asarray(grayscale_image, dtype=np.uint8)
+
             # Run the Active Contour Snake algorithm
             final_contour = self.ActiveContourSnake(grayscale_image, self.control_points)
 
             # Draw the final contour on the image
             image_with_final_contour = self.image["before_contour"].copy()
             for point in final_contour:
-                cv2.circle(image_with_final_contour, (int(point[1]), int(point[0])), radius=2, color=(255, 0, 0), thickness=-1)  
+                cv2.circle(image_with_final_contour, (int(point[1]), int(point[0])), radius=2, color=(255, 0, 0),
+                           thickness=-1)
 
-            # Display the image with the final contour
+                # Display the image with the final contour
             # self.display_image(image_with_final_contour, self.before_contour_image)
             self.display_image(image_with_final_contour, self.image_after_contour)
             self.display_area_and_perimeter(final_contour)
             # Calculate chain code
             self.calculate_chain_code(final_contour)
-            
-            
-            
 
     def calculate_chain_code(self, contour):
         chain_code = []
         for i in range(len(contour) - 1):
-            x1=contour[i][0]
-            y1=contour[i][1]
-            x2=contour[i+1][0]
-            y2=contour[i+1][1]
-            if x1==x2:
-                if y1> y2:
-                    for i in range (int(y2),int(y1)):
+            x1 = contour[i][0]
+            y1 = contour[i][1]
+            x2 = contour[i + 1][0]
+            y2 = contour[i + 1][1]
+            if x1 == x2:
+                if y1 > y2:
+                    for i in range(int(y2), int(y1)):
                         chain_code.append(2)
                 else:
-                    for i in range (int(y1),int(y2)):
+                    for i in range(int(y1), int(y2)):
                         chain_code.append(6)
-            elif y1 ==y2:
-                if x1>x2:
-                    for i in range (int(x2),int(x1)):
+            elif y1 == y2:
+                if x1 > x2:
+                    for i in range(int(x2), int(x1)):
                         chain_code.append(0)
                 else:
-                    for i in range (int(x2),int(x1)):
+                    for i in range(int(x2), int(x1)):
                         chain_code.append(4)
-            elif x1>x2 and y1>y2 :
-                for i in range (int(x2),int(x1)):
-                        chain_code.append(1)
-            elif x1<x2 and y1>y2 :
-                for i in range (int(y2),int(y1)):
-                        chain_code.append(3)
-            elif x1<x2 and y1<y2 :
-                for i in range (int(x1),int(x2)):    
+            elif x1 > x2 and y1 > y2:
+                for i in range(int(x2), int(x1)):
+                    chain_code.append(1)
+            elif x1 < x2 and y1 > y2:
+                for i in range(int(y2), int(y1)):
+                    chain_code.append(3)
+            elif x1 < x2 and y1 < y2:
+                for i in range(int(x1), int(x2)):
                     chain_code.append(5)
-            elif x1>x2 and y1<y2 :
-                for i in range (int(y1),int(y2)):
-                        chain_code.append(7)
-        
-                
+            elif x1 > x2 and y1 < y2:
+                for i in range(int(y1), int(y2)):
+                    chain_code.append(7)
+
         print("Length of chain code: ", len(chain_code))
         print("Chain code: ", chain_code)
+        # Clip the chain code to 15 elements
+        chain_code = chain_code[:15]
+        self.chaincode_lbl.setText(f"Chain Code: {chain_code}")
+        self.chaincode_len_lbl.setText(f"Chain Code Length: {len(chain_code)}")
 
-    
-    
-    def display_area_and_perimeter(self,contour):
+
+    def display_area_and_perimeter(self, contour):
         area = 0
         perimeter = 0
         for i in range(len(contour) - 1):
@@ -451,7 +463,7 @@ class MainApp(QMainWindow, FORM_CLASS):
             # of vectors from the current point to the next one and from
             # the current point to the origin, and then summing those
             # cross products up.
-            
+
             area += (x1 * y2 - x2 * y1)
 
             # Calculate the perimeter of the polygon by taking the
@@ -472,17 +484,16 @@ class MainApp(QMainWindow, FORM_CLASS):
         # of the triangle formed by that line segment and the x-axis. 
         # By summing up these areas, we get a sum of twice the areas of 
         # triangles, so we need to divide by 2 to get the total area of the polygon.
-        area = round(abs(area) / 2, 2) 
+        area = round(abs(area) / 2, 2)
 
         perimeter = round(perimeter, 2)
 
-
         print("Area: ", area)
         print("Perimeter: ", perimeter)
-        
+
         # set textlabel with the area and perimters
-
-
+        self.area_lbl.setText(f"Area: {area}")
+        self.perimeter_lbl.setText(f"Perimeter: {perimeter}")
 
     # Function to convert image to gray scale
     def gray_scale(self):
@@ -1085,7 +1096,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         prewitt = (prewitt * 255).astype(np.uint8)
         return prewitt
 
-  
     def canny_edge_detection(self, image, low_threshold=0, high_threshold=60):
         """
         Apply Canny edge detection to the input image using a custom implementation.
@@ -1104,7 +1114,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         # Step 2: Calculate gradient intensity and direction
         dx = cv2.Sobel(blurred, cv2.CV_64F, 1, 0, ksize=3)
         dy = cv2.Sobel(blurred, cv2.CV_64F, 0, 1, ksize=3)
-        gradient_magnitude = np.sqrt(dx**2 + dy**2)
+        gradient_magnitude = np.sqrt(dx ** 2 + dy ** 2)
         gradient_direction = np.arctan2(dy, dx) * (180 / np.pi)
 
         # Step 3: Non-maximum suppression
@@ -1113,13 +1123,13 @@ class MainApp(QMainWindow, FORM_CLASS):
             for j in range(1, gradient_magnitude.shape[1] - 1):
                 direction = gradient_direction[i, j]
                 if (0 <= direction < 22.5) or (157.5 <= direction <= 180):
-                    neighbors = [gradient_magnitude[i, j+1], gradient_magnitude[i, j-1]]
+                    neighbors = [gradient_magnitude[i, j + 1], gradient_magnitude[i, j - 1]]
                 elif (22.5 <= direction < 67.5):
-                    neighbors = [gradient_magnitude[i-1, j-1], gradient_magnitude[i+1, j+1]]
+                    neighbors = [gradient_magnitude[i - 1, j - 1], gradient_magnitude[i + 1, j + 1]]
                 elif (67.5 <= direction < 112.5):
-                    neighbors = [gradient_magnitude[i-1, j], gradient_magnitude[i+1, j]]
+                    neighbors = [gradient_magnitude[i - 1, j], gradient_magnitude[i + 1, j]]
                 else:
-                    neighbors = [gradient_magnitude[i-1, j+1], gradient_magnitude[i+1, j-1]]
+                    neighbors = [gradient_magnitude[i - 1, j + 1], gradient_magnitude[i + 1, j - 1]]
                 if gradient_magnitude[i, j] >= max(neighbors):
                     suppressed[i, j] = gradient_magnitude[i, j]
 
@@ -1440,7 +1450,7 @@ class MainApp(QMainWindow, FORM_CLASS):
 
     def detect_shape(self):
         shape_type = self.shape_combox.currentText()
-        
+
         # print(min_radius, max_radius)
         # print(min_radius, max_radius)
         gray_edge_detection_1 = cv2.cvtColor(self.image['edge_detection_1'], cv2.COLOR_BGR2GRAY)
@@ -1449,21 +1459,22 @@ class MainApp(QMainWindow, FORM_CLASS):
         edged_image = self.canny_edge_detection(gray_edge_detection_1, 0, 30)
         print(edged_image.shape)
         edged_image = self.canny_edge_detection(gray_edge_detection_1, 0, 90)
+        threshold = self.spinBox_threshold.text()
         # print(edged_image.shape)
-        detect = shapedetection(edged_image)
+        detect = shapedetection(edged_image, threshold)
         if shape_type == 'Lines':
             rhos, thetas = detect.hough_line_detection()
-            masked_image = detect.draw_hough_lines(rhos, thetas , self.image['edge_detection_1'].copy())    
+            masked_image = detect.draw_hough_lines(rhos, thetas, self.image['edge_detection_1'].copy())
         elif shape_type == 'Circles':
-            min_radius = int(self.min_lineEdit.text())
-            max_radius = int(self.max_lineEdit.text())
-            a,b,r = detect.hough_circle_detection(min_radius, max_radius)
-            masked_image = detect.draw_hough_circles(a,b,r,self.image['edge_detection_1'].copy())
+            min_radius = int(self.spinBox_min.text())
+            max_radius = int(self.spinBox_max.text())
+            a, b, r = detect.hough_circle_detection(min_radius, max_radius)
+            masked_image = detect.draw_hough_circles(a, b, r, self.image['edge_detection_1'].copy())
         elif shape_type == 'Elipses':
-            min_radius = int(self.min_lineEdit.text())
-            max_radius = int(self.max_lineEdit.text())
-            a,b,r1,r2 = detect.hough_ellipse_detection(min_radius,max_radius,min_radius,max_radius)
-            masked_image = detect.draw_hough_ellipses(a,b,r1,r2,self.image['edge_detection_1'].copy())
+            min_radius = int(self.spinBox_min.text())
+            max_radius = int(self.spinBox_max.text())
+            a, b, r1, r2 = detect.hough_ellipse_detection(min_radius, max_radius, min_radius, max_radius)
+            masked_image = detect.draw_hough_ellipses(a, b, r1, r2, self.image['edge_detection_1'].copy())
 
         self.display_image(masked_image, self.masked_image)
 

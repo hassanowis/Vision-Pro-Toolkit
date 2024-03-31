@@ -2,11 +2,12 @@ import cv2
 import numpy as np
 
 class shapedetection:
-    def __init__(self, image):
+    def __init__(self, image, threshold=100):
         '''Constructor for this class. The image is passed as an argument and stored in the class variable "image"'''
         self.edged_image = image
+        self.threshold = threshold
 
-    def hough_line_detection(self,threshold = 200):
+    def hough_line_detection(self):
         height, width = self.edged_image.shape
         diagonal = int(np.sqrt(height**2 + width**2))
         hough_space = np.zeros((2*diagonal, 180), dtype=np.uint64)
@@ -21,11 +22,11 @@ class shapedetection:
             rho_values = np.round(x * cos_theta + y * sin_theta).astype(int)
             np.add.at(hough_space, (rho_values + diagonal, np.arange(180)), 1)
 
-        rows, cols = np.where(hough_space >= threshold)
+        rows, cols = np.where(hough_space >= self.threshold)
         diag = rows - diagonal
         theta = cols        
         return diag, theta
-    def hough_circle_detection(self, min_radius=60, max_radius=100, threshold=100):
+    def hough_circle_detection(self, min_radius=60, max_radius=100):
         edges_points = np.nonzero(self.edged_image)
         h, w = self.edged_image.shape
         hough_space = np.zeros((h, w, max_radius - min_radius + 1), dtype=np.uint64)
@@ -42,10 +43,10 @@ class shapedetection:
                 a_valid, b_valid = a[valid_indices], b[valid_indices]
                 hough_space[b_valid, a_valid, r - min_radius] += 1
 
-        a, b, radius = np.where(hough_space >= threshold)
+        a, b, radius = np.where(hough_space >= self.threshold)
         return a, b, radius + min_radius
     
-    def hough_ellipse_detection(self, min_radius_1=60, max_radius_1=100,min_radius_2=60,max_radius_2=100, threshold=150):
+    def hough_ellipse_detection(self, min_radius_1=60, max_radius_1=100,min_radius_2=60,max_radius_2=100):
         edges_points = np.nonzero(self.edged_image)
         h, w = self.edged_image.shape
         print(h,w,max_radius_1 - min_radius_1 + 1,max_radius_2 - min_radius_2 + 1)
@@ -64,7 +65,7 @@ class shapedetection:
                     a_valid, b_valid = a[valid_indices], b[valid_indices]
                     hough_space[b_valid, a_valid, r1 - min_radius_1,r2 - min_radius_2] += 1
         # print(hough_space)
-        a, b, radius_1,radius_2 = np.where(hough_space >= threshold)
+        a, b, radius_1,radius_2 = np.where(hough_space >= self.threshold)
         return a, b, radius_1 + min_radius_1,radius_2 + min_radius_2
     
     def draw_hough_ellipses(self, a, b, radius_1,radius_2, edged_image):
