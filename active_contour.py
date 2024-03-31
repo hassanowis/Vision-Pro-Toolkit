@@ -1,15 +1,35 @@
-import cv2
-import numpy as np
 import time
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap, QPainter, QPen, QImage
+from PyQt5.QtGui import QPixmap, QImage
 import threading
+import numpy as np
+from skimage._shared.utils import _supported_float_type
+from skimage.util import img_as_float
+import cv2
+from skimage.filters import sobel
+from scipy.interpolate import RectBivariateSpline
+import threading
+import time
+from scipy.interpolate import interp1d
+from scipy.interpolate import CubicSpline
 import numpy as np
 import math
 from scipy.interpolate import RectBivariateSpline
 from skimage._shared.utils import _supported_float_type
 from skimage.util import img_as_float
 from skimage.filters import sobel
+import cv2
+from scipy.ndimage import gaussian_filter
+from skimage.filters import sobel
+from scipy.interpolate import RectBivariateSpline
+
+import cv2
+import numpy as np
+from PyQt5.QtGui import QPixmap, QImage
+from scipy.interpolate import RectBivariateSpline
+from skimage._shared.utils import _supported_float_type
+from skimage.filters import sobel
+from skimage.util import img_as_float
+
 
 class ActiveContour:
     def __init__(self, image, initial_contour, alpha=0.01, beta=0.01, gamma=0.1, iterations=1000, w_line=0, w_edge=1.0, convergence=0.1):
@@ -27,228 +47,184 @@ class ActiveContour:
         self.image = image
         self.initial_contour = initial_contour.astype(np.float32)
         self.contour = initial_contour
-        self.alpha = alpha
-        self.beta = beta
-        self.gamma = gamma
-        self.w_line = w_line
-        self.w_edge = w_edge
-        self.convergence = convergence
-        self.iterations = iterations
+        self.alpha = 0.01
+        self.beta = 0.01
+        self.gamma = 0.1
+        self.w_line = 0
+        self.w_edge = 1
+        self.convergence = 0.1
+        self.iterations = 2500
 
-    def evolve_contour_threaded(self, label, display_every_n_iterations=100):
-        """
-        Evolve the Active Contour Model (snake) using the greedy algorithm.
-        """
+    # def evolve_contour_threaded(self, label, display_every_n_iterations=100):
+    #     """
+    #     Evolve the Active Contour Model (snake) using the greedy algorithm.
+    #     """
 
-        def ActiveContourSnake():
-            # Check if the image and initial contour are not None
-            if self.image is None or self.contour is None:
-                print("Image or initial contour is None.")
-                return
+    # def ActiveContourSnake(self):
+    #     # Check if the image and initial contour are not None
+    #     if self.image is None or self.contour is None:
+    #         print("Image or initial contour is None.")
+    #         return
+    #
+    #     # Check if the initial contour has at least one point
+    #     if len(self.contour) < 1:
+    #         print("Initial contour has less than one point.")
+    #         return
+    #
+    #     # Check if alpha, beta, gamma, and iterations are positive numbers
+    #     if self.alpha <= 0 or self.beta <= 0 or self.gamma <= 0 or self.iterations <= 0:
+    #         print("Alpha, beta, gamma, and iterations should be positive numbers.")
+    #         return
+    #
+    #     # Convert image to grayscale if it's not already
+    #     if len(self.image.shape) == 3:
+    #         image_gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+    #     else:
+    #         image_gray = self.image
+    #
+    #     # Ensure the image is in the correct data type
+    #     image_gray = np.asarray(image_gray, dtype=np.uint8)
+    #
+    #     convergence_order = 16
+    #     max_move = 1.0
+    #     img = img_as_float(image_gray)
+    #     float_dtype = _supported_float_type(image_gray.dtype)
+    #     img = img.astype(float_dtype, copy=False)
+    #     edges = [sobel(img)]
+    #     img = self.w_line * img + self.w_edge * edges[0]
+    #
+    #     # Interpolate for smoothness:
+    #     interpolated_img = RectBivariateSpline(np.arange(img.shape[1]),
+    #                                            np.arange(img.shape[0]),
+    #                                            img.T, kx=2, ky=2, s=0)
+    #
+    #     snake_coords = self.contour[:, ::-1]
+    #     x_coords = snake_coords[:, 0].astype(float_dtype)
+    #     y_coords = snake_coords[:, 1].astype(float_dtype)
+    #     n = len(x_coords)
+    #     x_prev = np.empty((convergence_order, n), dtype=float_dtype)
+    #     y_prev = np.empty((convergence_order, n), dtype=float_dtype)
+    #
+    #     # Build snake shape matrix for Euler equation in double precision
+    #     eye_n = np.eye(n, dtype=float)
+    #     a = (np.roll(eye_n, -1, axis=0)
+    #          + np.roll(eye_n, -1, axis=1)
+    #          - 2 * eye_n)  # second order derivative, central difference
+    #     b = (np.roll(eye_n, -2, axis=0)
+    #          + np.roll(eye_n, -2, axis=1)
+    #          - 4 * np.roll(eye_n, -1, axis=0)
+    #          - 4 * np.roll(eye_n, -1, axis=1)
+    #          + 6 * eye_n)  # fourth order derivative, central difference
+    #     A = -self.alpha * a + self.beta * b
+    #
+    #     # implicit spline energy minimization and use float_dtype
+    #     inv = np.linalg.inv(A + self.gamma * eye_n)
+    #     inv = inv.astype(float_dtype, copy=False)
+    #
+    #     # Explicit time stepping for image energy minimization:
+    #     for i in range(self.iterations):
+    #         fx = interpolated_img(x_coords, y_coords, dx=1, grid=False).astype(float_dtype, copy=False)
+    #         fy = interpolated_img(x_coords, y_coords, dy=1, grid=False).astype(float_dtype, copy=False)
+    #         xn = inv @ (self.gamma * x_coords + fx)
+    #         yn = inv @ (self.gamma * y_coords + fy)
+    #
+    #         # Movements are capped to max_px_move per iteration:
+    #         dx = max_move * np.tanh(xn - x_coords)
+    #         dy = max_move * np.tanh(yn - y_coords)
+    #         x_coords += dx
+    #         y_coords += dy
+    #
+    #         # self.contour = np.stack([y_coords, x_coords], axis=1)
+    #         #
+    #         # # Display the contour every n iterations
+    #         # if i % display_every_n_iterations == 0:
+    #         #     self.display_image_with_contour(self.image, self.contour, label, self.initial_contour)
+    #         #     time.sleep(0.3)
+    #
+    #         # Convergence criteria needs to compare to a number of previous configurations since oscillations can
+    #         # occur.
+    #         j = i % (convergence_order + 1)
+    #         if j < convergence_order:
+    #             x_prev[j, :] = x_coords
+    #             y_prev[j, :] = y_coords
+    #         else:
+    #             dist = np.min(np.max(np.abs(x_prev - x_coords[None, :])
+    #                                  + np.abs(y_prev - y_coords[None, :]), 1))
+    #             if dist < self.convergence:
+    #                 break
+    #
+    #     self.contour = np.stack([y_coords, x_coords], axis=1)
+    #
+    #
+    #     # # Create a new thread for contour evolution
+    #     # contour_thread = threading.Thread(target=ActiveContourSnake)
+    #     #
+    #     # # Start the thread
+    #     # contour_thread.start()
 
-            # Check if the initial contour has at least one point
-            if len(self.contour) < 1:
-                print("Initial contour has less than one point.")
-                return
+    def ActiveContourSnake(self, image, snake, alpha=0.05, beta=0.01, w_line=0, w_edge=1, gamma=0.1, convergence=0.1):
 
-            # Check if alpha, beta, gamma, and iterations are positive numbers
-            if self.alpha <= 0 or self.beta <= 0 or self.gamma <= 0 or self.iterations <= 0:
-                print("Alpha, beta, gamma, and iterations should be positive numbers.")
-                return
+        convergence_order = 16
+        max_move = 1.0
+        img = img_as_float(image)
+        float_dtype = _supported_float_type(image.dtype)
+        img = img.astype(float_dtype, copy=False)
+        edges = [sobel(img)]
+        img = w_line * img + w_edge * edges[0]
 
-            # Convert image to grayscale if it's not already
-            if len(self.image.shape) == 3:
-                image_gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+        # Interpolate for smoothness:
+        interpolated_img = RectBivariateSpline(np.arange(img.shape[1]),
+                                               np.arange(img.shape[0]),
+                                               img.T, kx=2, ky=2, s=0)
+
+        snake_coords = snake[:, ::-1]
+        x_coords = snake_coords[:, 0].astype(float_dtype)
+        y_coords = snake_coords[:, 1].astype(float_dtype)
+        n = len(x_coords)
+        x_prev = np.empty((convergence_order, n), dtype=float_dtype)
+        y_prev = np.empty((convergence_order, n), dtype=float_dtype)
+
+        # Build snake shape matrix for Euler equation in double precision
+        eye_n = np.eye(n, dtype=float)
+        a = (np.roll(eye_n, -1, axis=0)
+             + np.roll(eye_n, -1, axis=1)
+             - 2 * eye_n)  # second order derivative, central difference
+        b = (np.roll(eye_n, -2, axis=0)
+             + np.roll(eye_n, -2, axis=1)
+             - 4 * np.roll(eye_n, -1, axis=0)
+             - 4 * np.roll(eye_n, -1, axis=1)
+             + 6 * eye_n)  # fourth order derivative, central difference
+        A = -alpha * a + beta * b
+
+        # implicit spline energy minimization and use float_dtype
+        inv = np.linalg.inv(A + gamma * eye_n)
+        inv = inv.astype(float_dtype, copy=False)
+
+        # Explicit time stepping for image energy minimization:
+        for i in range(2500):
+            fx = interpolated_img(x_coords, y_coords, dx=1, grid=False).astype(float_dtype, copy=False)
+            fy = interpolated_img(x_coords, y_coords, dy=1, grid=False).astype(float_dtype, copy=False)
+            xn = inv @ (gamma * x_coords + fx)
+            yn = inv @ (gamma * y_coords + fy)
+
+            # Movements are capped to max_px_move per iteration:
+            dx = max_move * np.tanh(xn - x_coords)
+            dy = max_move * np.tanh(yn - y_coords)
+            x_coords += dx
+            y_coords += dy
+
+            # Convergence criteria needs to compare to a number of previous configurations since oscillations can occur.
+            j = i % (convergence_order + 1)
+            if j < convergence_order:
+                x_prev[j, :] = x_coords
+                y_prev[j, :] = y_coords
             else:
-                image_gray = self.image
+                dist = np.min(np.max(np.abs(x_prev - x_coords[None, :])
+                                     + np.abs(y_prev - y_coords[None, :]), 1))
+                if dist < convergence:
+                    break
 
-            convergence_order = 16
-            max_move = 1.0
-            img = img_as_float(image_gray)
-            float_dtype = _supported_float_type(image_gray.dtype)
-            img = img.astype(float_dtype, copy=False)
-            edges = [sobel(img)]
-            img = self.w_line * img + self.w_edge * edges[0]
-
-            # Interpolate for smoothness:
-            interpolated_img = RectBivariateSpline(np.arange(img.shape[1]),
-                                                   np.arange(img.shape[0]),
-                                                   img.T, kx=2, ky=2, s=0)
-
-            snake_coords = self.contour[:, ::-1]
-            x_coords = snake_coords[:, 0].astype(float_dtype)
-            y_coords = snake_coords[:, 1].astype(float_dtype)
-            n = len(x_coords)
-            x_prev = np.empty((convergence_order, n), dtype=float_dtype)
-            y_prev = np.empty((convergence_order, n), dtype=float_dtype)
-
-            # Build snake shape matrix for Euler equation in double precision
-            eye_n = np.eye(n, dtype=float)
-            a = (np.roll(eye_n, -1, axis=0)
-                 + np.roll(eye_n, -1, axis=1)
-                 - 2 * eye_n)  # second order derivative, central difference
-            b = (np.roll(eye_n, -2, axis=0)
-                 + np.roll(eye_n, -2, axis=1)
-                 - 4 * np.roll(eye_n, -1, axis=0)
-                 - 4 * np.roll(eye_n, -1, axis=1)
-                 + 6 * eye_n)  # fourth order derivative, central difference
-            A = -self.alpha * a + self.beta * b
-
-            # implicit spline energy minimization and use float_dtype
-            inv = np.linalg.inv(A + self.gamma * eye_n)
-            inv = inv.astype(float_dtype, copy=False)
-
-            # Explicit time stepping for image energy minimization:
-            for i in range(self.iterations):
-                fx = interpolated_img(x_coords, y_coords, dx=1, grid=False).astype(float_dtype, copy=False)
-                fy = interpolated_img(x_coords, y_coords, dy=1, grid=False).astype(float_dtype, copy=False)
-                xn = inv @ (self.gamma * x_coords + fx)
-                yn = inv @ (self.gamma * y_coords + fy)
-
-                # Movements are capped to max_px_move per iteration:
-                dx = max_move * np.tanh(xn - x_coords)
-                dy = max_move * np.tanh(yn - y_coords)
-                x_coords += dx
-                y_coords += dy
-
-                self.contour = np.stack([y_coords, x_coords], axis=1)
-
-                # Display the contour every n iterations
-                if i % display_every_n_iterations == 0:
-                    self.display_image_with_contour(self.image, self.contour, label, self.initial_contour)
-                    time.sleep(0.3)
-
-                # Convergence criteria needs to compare to a number of previous configurations since oscillations can
-                # occur.
-                j = i % (convergence_order + 1)
-                if j < convergence_order:
-                    x_prev[j, :] = x_coords
-                    y_prev[j, :] = y_coords
-                else:
-                    dist = np.min(np.max(np.abs(x_prev - x_coords[None, :])
-                                         + np.abs(y_prev - y_coords[None, :]), 1))
-                    if dist < self.convergence:
-                        break
-
-            self.contour = np.stack([y_coords, x_coords], axis=1)
-        def evolve_contour_worker():
-            # Check if the image and initial contour are not None
-            if self.image is None or self.contour is None:
-                print("Image or initial contour is None.")
-                return
-
-            # Check if the initial contour has at least one point
-            if len(self.contour) < 1:
-                print("Initial contour has less than one point.")
-                return
-
-            # Check if alpha, beta, gamma, and iterations are positive numbers
-            if self.alpha <= 0 or self.beta <= 0 or self.gamma <= 0 or self.iterations <= 0:
-                print("Alpha, beta, gamma, and iterations should be positive numbers.")
-                return
-
-            # Convert image to grayscale if it's not already
-            if len(self.image.shape) == 3:
-                image_gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
-            else:
-                image_gray = self.image
-
-            # Calculate gradients in x and y directions
-            gradient_x = cv2.Sobel(image_gray, cv2.CV_64F, 1, 0, ksize=3)
-            gradient_y = cv2.Sobel(image_gray, cv2.CV_64F, 0, 1, ksize=3)
-
-            # Calculate magnitude of gradient at each point
-            external_energy = np.hypot(gradient_x, gradient_y)
-
-            # Calculate internal energy points
-            arc_length_param = self.calculate_arc_length_parameterization()
-            internal_energy_points = self.calculate_internal_energy(arc_length_param)
-
-            # Evolve the contour
-            for iteration in range(self.iterations):
-                for i in range(len(self.contour)):
-                    x, y = int(self.contour[i][0]), int(self.contour[i][1])
-                    # Ensure internal_energy_points has the same length as self.contour
-                    if len(internal_energy_points) != len(self.contour):
-                        internal_energy_points = np.pad(internal_energy_points,
-                                                        (0, len(self.contour) - len(internal_energy_points)),
-                                                        'constant')
-
-                    # Calculate energy at the current point
-                    external_energy_current = external_energy[x, y]
-                    internal_energy_prev = internal_energy_points[i - 1] if i != 0 else 0
-                    internal_energy_next = internal_energy_points[(i + 1) % len(self.contour)]
-
-                    # Update the point
-                    self.contour[i] += self.gamma * (external_energy_current + internal_energy_prev + internal_energy_next)
-
-                    # Clip to image boundaries
-                    self.contour[i, 0] = np.clip(self.contour[i, 0], 0, image_gray.shape[1] - 1)
-                    self.contour[i, 1] = np.clip(self.contour[i, 1], 0, image_gray.shape[0] - 1)
-
-                # Update internal energy for the next iteration
-                internal_energy_points = self.calculate_internal_energy(arc_length_param)
-
-                # Display the contour every n iterations
-                if iteration % display_every_n_iterations == 0:
-                    self.display_image_with_contour(self.image, self.contour, label, self.initial_contour)
-                    time.sleep(0.3)
-            print("Contour evolution completed.")
-            # print("Final contour:", self.contour)
-
-        # Create a new thread for contour evolution
-        contour_thread = threading.Thread(target=ActiveContourSnake)
-
-        # Start the thread
-        contour_thread.start()
-
-    def calculate_arc_length_parameterization(self):
-        segment_lengths = np.linalg.norm(np.diff(self.contour, axis=0), axis=1)
-        cumulative_lengths = np.insert(np.cumsum(segment_lengths), 0, 0)
-        arc_length_param = cumulative_lengths / cumulative_lengths[-1]
-        return arc_length_param
-
-    def calculate_internal_energy(self, arc_length_param):
-        dv_ds = np.diff(arc_length_param)
-        dv2_ds2 = np.diff(dv_ds)
-        dv2_ds2 = np.insert(dv2_ds2, 0, 0)  # Pad with a zero at the beginning
-        spline_term = (self.alpha * dv_ds**2 + self.beta * dv2_ds2**2) / 2
-        internal_energy_points = spline_term
-        return internal_energy_points
-
-    def calculate_line_energy(self, image, gradient_magnitude):
-        # Ensure contour indices are integers
-        contour_indices = self.contour.astype(int)
-
-        # Calculate line energy based on gradient magnitude
-        E_line = gradient_magnitude[contour_indices[:, 1], contour_indices[:, 0]]
-        return E_line
-
-    def calculate_edge_energy(self, gradient_magnitude):
-        # Ensure contour indices are integers
-        contour_indices = self.contour.astype(int)
-
-        # Calculate edge energy based on gradient magnitude
-        E_edge = gradient_magnitude[contour_indices[:, 1], contour_indices[:, 0]]
-        return E_edge
-
-    def calculate_termination_energy(self, curvature):
-        # Ensure contour indices are integers
-        contour_indices = self.contour.astype(int)
-
-        # Calculate termination energy based on curvature
-        E_term = curvature[contour_indices[:, 1], contour_indices[:, 0]]
-        return E_term
-
-    def calculate_external_energy(self, image, gradient_magnitude):
-        # Calculate energy for lines, edges, and terminations
-        E_line = self.calculate_line_energy(image, gradient_magnitude)
-        E_edge = self.calculate_edge_energy(gradient_magnitude)
-        E_term = self.calculate_termination_energy(image)
-
-        # Combine energy functions with weights
-        E_external = self.w_line * E_line + self.w_edge * E_edge + self.w_term * E_term
-        return E_external
+        return np.stack([y_coords, x_coords], axis=1)
 
     def compute_chain_code(self):
         """
