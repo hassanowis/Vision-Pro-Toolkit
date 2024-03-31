@@ -4,10 +4,15 @@ import time
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QPainter, QPen, QImage
 import threading
-
+import numpy as np
+import math
+from scipy.interpolate import RectBivariateSpline
+from skimage._shared.utils import _supported_float_type
+from skimage.util import img_as_float
+from skimage.filters import sobel
 
 class ActiveContour:
-    def __init__(self, image, initial_contour, alpha=0.01, beta=0.1, gamma=0.01, iterations=1000, w_line=1.0, w_edge=1.0, w_term=1.0):
+    def __init__(self, image, initial_contour, alpha=0.01, beta=0.01, gamma=0.1, iterations=1000, w_line=0, w_edge=1.0, convergence=0.1):
         """
         Initialize the Active Contour Model.
 
@@ -21,13 +26,13 @@ class ActiveContour:
         """
         self.image = image
         self.initial_contour = initial_contour.astype(np.float32)
-        self.contour = initial_contour.astype(np.float32)
+        self.contour = initial_contour
         self.alpha = alpha
         self.beta = beta
         self.gamma = gamma
         self.w_line = w_line
         self.w_edge = w_edge
-        self.w_term = w_term
+        self.convergence = convergence
         self.iterations = iterations
 
     def evolve_contour_threaded(self, label, display_every_n_iterations=100):
@@ -35,6 +40,97 @@ class ActiveContour:
         Evolve the Active Contour Model (snake) using the greedy algorithm.
         """
 
+        def ActiveContourSnake():
+            # Check if the image and initial contour are not None
+            if self.image is None or self.contour is None:
+                print("Image or initial contour is None.")
+                return
+
+            # Check if the initial contour has at least one point
+            if len(self.contour) < 1:
+                print("Initial contour has less than one point.")
+                return
+
+            # Check if alpha, beta, gamma, and iterations are positive numbers
+            if self.alpha <= 0 or self.beta <= 0 or self.gamma <= 0 or self.iterations <= 0:
+                print("Alpha, beta, gamma, and iterations should be positive numbers.")
+                return
+
+            # Convert image to grayscale if it's not already
+            if len(self.image.shape) == 3:
+                image_gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+            else:
+                image_gray = self.image
+
+            convergence_order = 16
+            max_move = 1.0
+            img = img_as_float(image_gray)
+            float_dtype = _supported_float_type(image_gray.dtype)
+            img = img.astype(float_dtype, copy=False)
+            edges = [sobel(img)]
+            img = self.w_line * img + self.w_edge * edges[0]
+
+            # Interpolate for smoothness:
+            interpolated_img = RectBivariateSpline(np.arange(img.shape[1]),
+                                                   np.arange(img.shape[0]),
+                                                   img.T, kx=2, ky=2, s=0)
+
+            snake_coords = self.contour[:, ::-1]
+            x_coords = snake_coords[:, 0].astype(float_dtype)
+            y_coords = snake_coords[:, 1].astype(float_dtype)
+            n = len(x_coords)
+            x_prev = np.empty((convergence_order, n), dtype=float_dtype)
+            y_prev = np.empty((convergence_order, n), dtype=float_dtype)
+
+            # Build snake shape matrix for Euler equation in double precision
+            eye_n = np.eye(n, dtype=float)
+            a = (np.roll(eye_n, -1, axis=0)
+                 + np.roll(eye_n, -1, axis=1)
+                 - 2 * eye_n)  # second order derivative, central difference
+            b = (np.roll(eye_n, -2, axis=0)
+                 + np.roll(eye_n, -2, axis=1)
+                 - 4 * np.roll(eye_n, -1, axis=0)
+                 - 4 * np.roll(eye_n, -1, axis=1)
+                 + 6 * eye_n)  # fourth order derivative, central difference
+            A = -self.alpha * a + self.beta * b
+
+            # implicit spline energy minimization and use float_dtype
+            inv = np.linalg.inv(A + self.gamma * eye_n)
+            inv = inv.astype(float_dtype, copy=False)
+
+            # Explicit time stepping for image energy minimization:
+            for i in range(self.iterations):
+                fx = interpolated_img(x_coords, y_coords, dx=1, grid=False).astype(float_dtype, copy=False)
+                fy = interpolated_img(x_coords, y_coords, dy=1, grid=False).astype(float_dtype, copy=False)
+                xn = inv @ (self.gamma * x_coords + fx)
+                yn = inv @ (self.gamma * y_coords + fy)
+
+                # Movements are capped to max_px_move per iteration:
+                dx = max_move * np.tanh(xn - x_coords)
+                dy = max_move * np.tanh(yn - y_coords)
+                x_coords += dx
+                y_coords += dy
+
+                self.contour = np.stack([y_coords, x_coords], axis=1)
+
+                # Display the contour every n iterations
+                if i % display_every_n_iterations == 0:
+                    self.display_image_with_contour(self.image, self.contour, label, self.initial_contour)
+                    time.sleep(0.3)
+
+                # Convergence criteria needs to compare to a number of previous configurations since oscillations can
+                # occur.
+                j = i % (convergence_order + 1)
+                if j < convergence_order:
+                    x_prev[j, :] = x_coords
+                    y_prev[j, :] = y_coords
+                else:
+                    dist = np.min(np.max(np.abs(x_prev - x_coords[None, :])
+                                         + np.abs(y_prev - y_coords[None, :]), 1))
+                    if dist < self.convergence:
+                        break
+
+            self.contour = np.stack([y_coords, x_coords], axis=1)
         def evolve_contour_worker():
             # Check if the image and initial contour are not None
             if self.image is None or self.contour is None:
@@ -101,7 +197,7 @@ class ActiveContour:
             # print("Final contour:", self.contour)
 
         # Create a new thread for contour evolution
-        contour_thread = threading.Thread(target=evolve_contour_worker)
+        contour_thread = threading.Thread(target=ActiveContourSnake)
 
         # Start the thread
         contour_thread.start()
@@ -192,43 +288,6 @@ class ActiveContour:
         cv2.drawContours(mask, [self.contour.astype(np.int32)], -1, 255, thickness=cv2.FILLED)
         area = cv2.countNonZero(mask)
         return area
-
-    def display_contour(self, label, initial_contour=None):
-        """
-        Display the image with the contour overlay.
-        """
-        # Convert numpy array to QImage
-        height, width = self.image.shape[:2]
-        bytesPerLine = 3 * width
-        image = QImage(self.image.data, width, height, bytesPerLine, QImage.Format_RGB888).rgbSwapped()
-
-        pixmap = QPixmap.fromImage(image)
-        painter = QPainter(pixmap)
-        pen = QPen()
-        pen.setColor(Qt.green)
-        pen.setWidth(2)
-        painter.setPen(pen)
-
-        # Draw the evolved contour
-        for i in range(len(self.contour)):
-            x1, y1 = int(self.contour[i][0]), int(self.contour[i][1])
-            x2, y2 = int(self.contour[(i + 1) % len(self.contour)][0]), int(
-                self.contour[(i + 1) % len(self.contour)][1])
-            painter.drawLine(x1, y1, x2, y2)
-
-        # Draw the initial contour if it's provided
-        if initial_contour is not None:
-            pen.setColor(Qt.red)  # Change the color for the initial contour
-            painter.setPen(pen)
-            for i in range(len(initial_contour)):
-                x1, y1 = int(initial_contour[i][0]), int(initial_contour[i][1])
-                x2, y2 = int(initial_contour[(i + 1) % len(initial_contour)][0]), int(
-                    initial_contour[(i + 1) % len(initial_contour)][1])
-                painter.drawLine(x1, y1, x2, y2)
-
-        label.setPixmap(pixmap)
-        label.setGeometry(0, 0, pixmap.width(), pixmap.height())
-        label.show()
 
     def display_image_with_contour(self, image, contour, label, initial_contour=None):
         """

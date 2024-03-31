@@ -56,6 +56,9 @@ class MainApp(QMainWindow, FORM_CLASS):
         }
         self.hide_visibility("noise")
         self.hide_visibility("filter")
+        self.dragging = False
+        self.center = None
+        self.control_points = []  # List to store control points
 
     # Function to handle button signals and initialize the application
     def handle_buttons(self):
@@ -80,7 +83,9 @@ class MainApp(QMainWindow, FORM_CLASS):
                                                                                           label=self.before_contour_image,
                                                                                           type='before_contour')
         self.apply_contour_btn.clicked.connect(self.apply_contour)
-        
+        self.before_contour_image.mousePressEvent = self.mousePressEvent
+        self.before_contour_image.mouseMoveEvent = self.mouseMoveEvent
+        self.before_contour_image.mouseReleaseEvent = self.mouseReleaseEvent
         self.image_tobe_masked.mouseDoubleClickEvent = lambda event: self.handle_mouse(event, label=self.image_tobe_masked,type='edge_detection_1')
         self.MIX_btn.clicked.connect(self.mix_images)
         self.shapedetect_btn.clicked.connect(self.detect_shape )
@@ -1153,6 +1158,35 @@ class MainApp(QMainWindow, FORM_CLASS):
         y = center[1] + radius * np.sin(angles)
         return np.column_stack([x, y])
 
+    def mousePressEvent(self, event):
+        if event.buttons() == Qt.LeftButton:
+            self.dragging = True
+            self.center = (event.x(), event.y())
+
+    def mouseMoveEvent(self, event):
+        if self.dragging:
+            if self.image["before_contour"] is not None:
+                image_with_contour = self.image["before_contour"].copy()
+                radius = int(np.sqrt((event.x() - self.center[0]) ** 2 + (event.y() - self.center[1]) ** 2))
+                cv2.circle(image_with_contour, self.center, radius, (0, 255, 0), 2)
+                self.control_points = self.calculate_control_points(self.center, radius)
+                # print(control_points)
+                for point in self.control_points:
+                    cv2.circle(image_with_contour, (int(point[0]), int(point[1])), radius=2, color=(255, 0, 0),
+                               thickness=-1)  # Draw a filled circle for each control point
+                self.display_image(image_with_contour, self.before_contour_image)
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.dragging = False
+
+    def calculate_control_points(self, center, radius, num_points=50):
+        theta = np.linspace(0, 2 * np.pi, num_points)
+        x = center[0] + radius * np.cos(theta)
+        y = center[1] + radius * np.sin(theta)
+        control_points = np.column_stack((x, y))
+        return control_points
+
     def apply_contour(self):
         """
         Apply contour detection to the input image.
@@ -1160,13 +1194,13 @@ class MainApp(QMainWindow, FORM_CLASS):
         Returns:
             None
         """
-        if self.image['before_contour'] is None:
+        if self.image['before_contour'] is None and self.control_points is None:
             return
 
         # Get alpha, beta and gamma values
-        alpha = self.spinBox_alpha.value() * 0.001
-        beta = self.spinBox_beta.value() * 0.001
-        gamma = self.spinBox_gamma.value() * 0.001
+        alpha = self.spinBox_alpha.value() / 1000
+        beta = self.spinBox_beta.value() / 1000
+        gamma = self.spinBox_gamma.value() / 1000
         num_iterations = self.spinBox_num_iterations.value()
         print("Alpha: ", alpha, "Beta: ", beta, "Gamma: ", gamma, "Num Iterations: ", num_iterations)
 
@@ -1174,13 +1208,13 @@ class MainApp(QMainWindow, FORM_CLASS):
         height, width = self.image['before_contour'].shape[:2]
         center = (width // 2, height // 2)
         # Create Initial Contour as a circle
-        initial_contour = self.generate_circle_contour(center, radius=120)
+        initial_contour = self.control_points
+        # initial_contour = self.generate_circle_contour(center, 150, num_points=100)
         # Create Active Contour object
         contour = ActiveContour(self.image['before_contour'], initial_contour, alpha, beta, gamma, num_iterations)
         # Apply active contour
         contour.evolve_contour_threaded(self.image_after_contour)
         # Draw the contours on the original image
-        # contour.display_contour(self.image_after_contour, initial_contour)
         contour.display_image_with_contour(self.image['before_contour'], contour.contour, self.image_after_contour, initial_contour)
 
     def detect_shape(self):
