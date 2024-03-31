@@ -1,2 +1,1 @@
-
-        shape_type = self.shape_combox.currentText()
+print("Length of chain code: ", len(chain_code))

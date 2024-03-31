@@ -41,6 +41,9 @@ from skimage.util import img_as_float
 from skimage.filters import sobel
 import cv2
 from scipy.ndimage import gaussian_filter
+from PIL import Image, ImageDraw
+
+
 # from skimage.filters import sobel
 from scipy.interpolate import RectBivariateSpline
 FORM_CLASS, _ = loadUiType(
@@ -389,7 +392,95 @@ class MainApp(QMainWindow, FORM_CLASS):
                 cv2.circle(image_with_final_contour, (int(point[1]), int(point[0])), radius=2, color=(255, 0, 0), thickness=-1)  
 
             # Display the image with the final contour
-            self.display_image(image_with_final_contour, self.before_contour_image)
+            # self.display_image(image_with_final_contour, self.before_contour_image)
+            self.display_image(image_with_final_contour, self.image_after_contour)
+            self.display_area_and_perimeter(final_contour)
+            # Calculate chain code
+            self.calculate_chain_code(final_contour)
+            
+            
+            
+
+    def calculate_chain_code(self, contour):
+        chain_code = []
+        for i in range(len(contour) - 1):
+            x1=contour[i][0]
+            y1=contour[i][1]
+            x2=contour[i+1][0]
+            y2=contour[i+1][1]
+            if x1==x2:
+                if y1> y2:
+                    for i in range (int(y2),int(y1)):
+                        chain_code.append(2)
+                else:
+                    for i in range (int(y1),int(y2)):
+                        chain_code.append(6)
+            elif y1 ==y2:
+                if x1>x2:
+                    for i in range (int(x2),int(x1)):
+                        chain_code.append(0)
+                else:
+                    for i in range (int(x2),int(x1)):
+                        chain_code.append(4)
+            elif x1>x2 and y1>y2 :
+                for i in range (int(x2),int(x1)):
+                        chain_code.append(1)
+            elif x1<x2 and y1>y2 :
+                for i in range (int(y2),int(y1)):
+                        chain_code.append(3)
+            elif x1<x2 and y1<y2 :
+                for i in range (int(x1),int(x2)):    
+                    chain_code.append(5)
+            elif x1>x2 and y1<y2 :
+                for i in range (int(y1),int(y2)):
+                        chain_code.append(7)
+        
+                
+        print("Length of chain code: ", len(chain_code))
+        print("Chain code: ", chain_code)
+
+    
+    
+    def display_area_and_perimeter(self,contour):
+        area = 0
+        perimeter = 0
+        for i in range(len(contour) - 1):
+            x1, y1 = contour[i]
+            x2, y2 = contour[i + 1]
+            # Calculate the area of the polygon by taking the cross product
+            # of vectors from the current point to the next one and from
+            # the current point to the origin, and then summing those
+            # cross products up.
+            
+            area += (x1 * y2 - x2 * y1)
+
+            # Calculate the perimeter of the polygon by taking the
+            # Euclidean distance between the current point and the next
+            # one.
+            perimeter += np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+
+        # (Note that the last point is connected to the first point,
+        # so we wrap around and include that again at the end.)
+        x1, y1 = contour[-1]
+        x2, y2 = contour[0]
+        area += (x1 * y2 - x2 * y1)
+        perimeter += np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+
+        # We divided by 2 because in the loop where we calculate the area, 
+        # we consider each line segment of the polygon, and for each segment, 
+        # we calculate the area of a parallelogram, which is twice the area 
+        # of the triangle formed by that line segment and the x-axis. 
+        # By summing up these areas, we get a sum of twice the areas of 
+        # triangles, so we need to divide by 2 to get the total area of the polygon.
+        area = round(abs(area) / 2, 2) 
+
+        perimeter = round(perimeter, 2)
+
+
+        print("Area: ", area)
+        print("Perimeter: ", perimeter)
+        
+        # set textlabel with the area and perimters
 
 
 
