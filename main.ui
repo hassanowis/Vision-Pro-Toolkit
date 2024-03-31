@@ -550,7 +550,7 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
 }</string>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -1198,7 +1198,7 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
                </widget>
               </item>
               <item>
-               <widget class="QComboBox" name="comboBox">
+               <widget class="QComboBox" name="shape_combox">
                 <item>
                  <property name="text">
                   <string>Lines</string>
@@ -1223,25 +1223,14 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
               <item>
                <widget class="QLabel" name="label_7">
                 <property name="text">
-                 <string>Lower Edge Threshold</string>
+                 <string>min radius</string>
                 </property>
                </widget>
               </item>
               <item>
                <layout class="QVBoxLayout" name="verticalLayout_11">
                 <item>
-                 <widget class="QSlider" name="horizontalSlider">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="label_8">
-                  <property name="text">
-                   <string>0%</string>
-                  </property>
-                 </widget>
+                 <widget class="QLineEdit" name="min_lineEdit"/>
                 </item>
                </layout>
               </item>
@@ -1252,25 +1241,14 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
               <item>
                <widget class="QLabel" name="label_9">
                 <property name="text">
-                 <string>Lower Edge Threshold</string>
+                 <string>max radius</string>
                 </property>
                </widget>
               </item>
               <item>
                <layout class="QVBoxLayout" name="verticalLayout_18">
                 <item>
-                 <widget class="QSlider" name="horizontalSlider_2">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="label_10">
-                  <property name="text">
-                   <string>0%</string>
-                  </property>
-                 </widget>
+                 <widget class="QLineEdit" name="max_lineEdit"/>
                 </item>
                </layout>
               </item>
@@ -1295,9 +1273,16 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="label_12">
+                 <widget class="QLabel" name="label_8">
                   <property name="text">
-                   <string>0%</string>
+                   <string>Higher Edge Threshold</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QSlider" name="horizontalSlider">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
                   </property>
                  </widget>
                 </item>
@@ -2094,7 +2079,7 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
      <x>0</x>
      <y>0</y>
      <width>1262</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menufile">

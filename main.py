@@ -1439,13 +1439,32 @@ class MainApp(QMainWindow, FORM_CLASS):
         # print("Contour Applied")
 
     def detect_shape(self):
-        # Apply edge detection
-        # Convert the image to grayscale
+        shape_type = self.shape_combox.currentText()
+        
+        # print(min_radius, max_radius)
+        # print(min_radius, max_radius)
         gray_edge_detection_1 = cv2.cvtColor(self.image['edge_detection_1'], cv2.COLOR_BGR2GRAY)
-        edged_image = self.canny_edge_detection(gray_edge_detection_1)
+        # filtered_image = self.gaussian_filter(gray_edge_detection_1, (5, 5), 1)
+
+        edged_image = self.canny_edge_detection(gray_edge_detection_1, 0, 30)
+        print(edged_image.shape)
+        edged_image = self.canny_edge_detection(gray_edge_detection_1, 0, 90)
+        # print(edged_image.shape)
         detect = shapedetection(edged_image)
-        rhos, thetas = detect.hough_line_detection()
-        masked_image = detect.draw_hough_lines(rhos, thetas , self.image['edge_detection_1'].copy())    
+        if shape_type == 'Lines':
+            rhos, thetas = detect.hough_line_detection()
+            masked_image = detect.draw_hough_lines(rhos, thetas , self.image['edge_detection_1'].copy())    
+        elif shape_type == 'Circles':
+            min_radius = int(self.min_lineEdit.text())
+            max_radius = int(self.max_lineEdit.text())
+            a,b,r = detect.hough_circle_detection(min_radius, max_radius)
+            masked_image = detect.draw_hough_circles(a,b,r,self.image['edge_detection_1'].copy())
+        elif shape_type == 'Elipses':
+            min_radius = int(self.min_lineEdit.text())
+            max_radius = int(self.max_lineEdit.text())
+            a,b,r1,r2 = detect.hough_ellipse_detection(min_radius,max_radius,min_radius,max_radius)
+            masked_image = detect.draw_hough_ellipses(a,b,r1,r2,self.image['edge_detection_1'].copy())
+
         self.display_image(masked_image, self.masked_image)
 
 

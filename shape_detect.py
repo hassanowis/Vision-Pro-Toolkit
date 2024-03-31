@@ -44,6 +44,34 @@ class shapedetection:
 
         a, b, radius = np.where(hough_space >= threshold)
         return a, b, radius + min_radius
+    
+    def hough_ellipse_detection(self, min_radius_1=60, max_radius_1=100,min_radius_2=60,max_radius_2=100, threshold=150):
+        edges_points = np.nonzero(self.edged_image)
+        h, w = self.edged_image.shape
+        print(h,w,max_radius_1 - min_radius_1 + 1,max_radius_2 - min_radius_2 + 1)
+        hough_space = np.zeros((h, w, max_radius_1 - min_radius_1 + 1,max_radius_2 - min_radius_2 + 1), dtype=np.uint64)
+        x_points, y_points = edges_points
+
+        cos_theta = np.cos(np.deg2rad(np.arange(360)))
+        sin_theta = np.sin(np.deg2rad(np.arange(360)))
+
+        for r1 in range(min_radius_1, max_radius_1 + 1):
+            for r2 in range(min_radius_2, max_radius_2 + 1):
+                for theta in range(360):
+                    a = np.round(x_points - r1 * cos_theta[theta]).astype(int)
+                    b = np.round(y_points - r2 * sin_theta[theta]).astype(int)
+                    valid_indices = np.where((a >= 0) & (a < w) & (b >= 0) & (b < h))
+                    a_valid, b_valid = a[valid_indices], b[valid_indices]
+                    hough_space[b_valid, a_valid, r1 - min_radius_1,r2 - min_radius_2] += 1
+        # print(hough_space)
+        a, b, radius_1,radius_2 = np.where(hough_space >= threshold)
+        return a, b, radius_1 + min_radius_1,radius_2 + min_radius_2
+    
+    def draw_hough_ellipses(self, a, b, radius_1,radius_2, edged_image):
+        edged_image = edged_image.copy()
+        for x, y, r2,r1 in zip(a, b, radius_1,radius_2):
+            cv2.ellipse(edged_image, (x, y), (r1,r2), 0, 0, 360, (0, 255, 0), 2)
+        return edged_image
     def draw_hough_circles(self, a, b, radius, edged_image):
         edged_image = edged_image.copy()
         for x, y, r in zip(a, b, radius):
