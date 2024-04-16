@@ -42,6 +42,8 @@ from skimage.filters import sobel
 import cv2
 from scipy.ndimage import gaussian_filter
 from PIL import Image, ImageDraw
+from feature_extraction import lambda_minus_croner_detection
+import time
 
 # from skimage.filters import sobel
 from scipy.interpolate import RectBivariateSpline
@@ -75,6 +77,7 @@ class MainApp(QMainWindow, FORM_CLASS):
             "before_contour": None,
             "contour": None,
             "edge_detection_1": None,
+            "feature_detection_1" :None,
         }
         self.hide_visibility("noise")
         self.hide_visibility("filter")
@@ -117,6 +120,12 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.image_tobe_masked.mouseDoubleClickEvent = lambda event: self.handle_mouse(event,
                                                                                        label=self.image_tobe_masked,
                                                                                        type='edge_detection_1')
+        
+        self.image_before_harris.mouseDoubleClickEvent = lambda event: self.handle_mouse(event,
+                                                                                       label=self.image_before_harris,
+                                                                                       type='feature_detection_1')
+        self.radioButton_2.clicked.connect(self.draw_corners_eigenvalues)
+        
         self.MIX_btn.clicked.connect(self.mix_images)
         self.shapedetect_btn.clicked.connect(self.detect_shape)
         self.normalize_btn.clicked.connect(self.normalize_image)
@@ -1434,21 +1443,18 @@ class MainApp(QMainWindow, FORM_CLASS):
         Returns:
             None
         """
-        # if self.image['before_contour'] is None:
-        #     return
-        # # Create Initial Contour
-        # initial_contour = np.array([[10, 10], [10, 350], [350, 350], [350, 10]])
-        # # Create Active Contour object
-        # contour = ActiveContour(self.image['before_contour'], initial_contour)
-        # # Apply active contour
-        # contour.evolve_contour()
-        # # Draw the contours on the original image
-        # contour.display_contour(self.image_after_contour)
-        # self.draw_initial_contour_points()
         self.apply_contour_algorithm()
-        # print("Contour Applied")
 
     def detect_shape(self):
+        """
+        Detects the shape of an object in an image.
+
+        Parameters:
+            None
+
+        Returns:
+            None
+        """
         shape_type = self.shape_combox.currentText()
 
         # print(min_radius, max_radius)
@@ -1477,6 +1483,40 @@ class MainApp(QMainWindow, FORM_CLASS):
             masked_image = detect.draw_hough_ellipses(a, b, r1, r2, self.image['edge_detection_1'].copy())
 
         self.display_image(masked_image, self.masked_image)
+
+    def draw_corners_eigenvalues(self):
+        """
+        Draws corners and eigenvalues on an image using the Harris Corner Detection algorithm.
+        
+        This function starts a timer, retrieves the image from the 'feature_detection_1' key in the 'image' dictionary,
+        and passes it to the 'lambda_minus_croner_detection' function to obtain the corners and execution time. 
+        It then creates a copy of the image and draws circles on the original image at the detected corners.
+        The resulting image is displayed using the 'display_image' function.
+        
+        After that, the function ends the timer and calculates the execution time in seconds.
+        The execution time is then displayed in the 'comp_time_lbl' label in milliseconds.
+        
+        Parameters:
+            self (object): The instance of the class.
+        
+        Returns:
+            None
+        """
+        # Start the timer
+        start_time = time.time()
+        img = self.image['feature_detection_1']
+        corners = lambda_minus_croner_detection(img) #window_size = 5,th_percentage = 0.01
+        # Draw corners on the original image
+        img_with_corners = img.copy()
+        for corner in corners:
+            cv2.circle(img_with_corners, corner, 5, (0, 0, 255), 2)  # Red color for corners
+        self.display_image(img_with_corners, self.image_after_harris)
+        # End the timer
+        end_time = time.time()
+
+        # Calculate the execution time
+        execution_time = end_time - start_time  # in seconds
+        self.comp_time_lbl.setText(f"Computation Time: {execution_time * 1000:.2f}ms")
 
 
 def main():

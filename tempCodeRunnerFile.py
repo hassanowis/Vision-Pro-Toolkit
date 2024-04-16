@@ -1,1 +1,0 @@
-print("Length of chain code: ", len(chain_code))
