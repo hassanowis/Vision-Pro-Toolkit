@@ -1505,7 +1505,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         # Start the timer
         start_time = time.time()
         img = self.image['feature_detection_1']
-        corners,ex_time = lambda_minus_croner_detection(img) #window_size = 5,th_percentage = 0.01
+        corners = lambda_minus_croner_detection(img) #window_size = 5,th_percentage = 0.01
         # Draw corners on the original image
         img_with_corners = img.copy()
         for corner in corners:
