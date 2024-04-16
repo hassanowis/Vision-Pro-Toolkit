@@ -42,7 +42,7 @@ from skimage.filters import sobel
 import cv2
 from scipy.ndimage import gaussian_filter
 from PIL import Image, ImageDraw
-from feature_extraction import lambda_minus_croner_detection, harris_corner_detection
+import feature_extraction
 import time
 
 # from skimage.filters import sobel
@@ -77,7 +77,9 @@ class MainApp(QMainWindow, FORM_CLASS):
             "before_contour": None,
             "contour": None,
             "edge_detection_1": None,
-            "feature_detection_1" :None,
+            "feature_detection_1": None,
+            "image_to_match": None,
+            "image_to_be_matched": None,
         }
         self.hide_visibility("noise")
         self.hide_visibility("filter")
@@ -120,10 +122,17 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.image_tobe_masked.mouseDoubleClickEvent = lambda event: self.handle_mouse(event,
                                                                                        label=self.image_tobe_masked,
                                                                                        type='edge_detection_1')
-        
+
         self.image_before_harris.mouseDoubleClickEvent = lambda event: self.handle_mouse(event,
-                                                                                       label=self.image_before_harris,
-                                                                                       type='feature_detection_1')
+                                                                                         label=self.image_before_harris,
+                                                                                         type='feature_detection_1')
+        self.image_to_match.mouseDoubleClickEvent = lambda event: self.handle_mouse(event,
+                                                                                    label=self.image_to_match,
+                                                                                    type='image_to_match')
+        self.image_to_be_matched.mouseDoubleClickEvent = lambda event: self.handle_mouse(event,
+                                                                                         label=self.image_to_be_matched,
+                                                                                         type='image_to_be_matched')
+        self.match_images_btn.clicked.connect(self.match_images)
         self.feature_detection_apply_btn.clicked.connect(self.apply_feature_detection)
         self.MIX_btn.clicked.connect(self.mix_images)
         self.shapedetect_btn.clicked.connect(self.detect_shape)
@@ -134,6 +143,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.mix1_slider.valueChanged.connect(self.plot_frequency_filter_1)
         self.mix2_slider.valueChanged.connect(self.plot_frequency_filter_2)
         self.th_percentage_slider.valueChanged.connect(self.slider_changed)
+        self.th_percentage_slider_2.valueChanged.connect(self.slider_changed)
         self.window_size_slider.valueChanged.connect(self.slider_changed)
 
     # Function to handle mouse events
@@ -461,7 +471,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         chain_code = chain_code[:15]
         self.chaincode_lbl.setText(f"Chain Code: {chain_code}")
         self.chaincode_len_lbl.setText(f"Chain Code Length: {len(chain_code)}")
-
 
     def display_area_and_perimeter(self, contour):
         area = 0
@@ -1496,7 +1505,6 @@ class MainApp(QMainWindow, FORM_CLASS):
             self.draw_corners_eigenvalues()
         elif self.harris_radioButton.isChecked():
             self.draw_harris_corners()
-            
 
     def slider_changed(self):
         """
@@ -1506,6 +1514,7 @@ class MainApp(QMainWindow, FORM_CLASS):
             None
         """
         self.th_percentage_slider_lbl.setText(f"Threshold Percentage: {self.th_percentage_slider.value() / 100}%")
+        self.th_percentage_slider_lbl_2.setText(f"Threshold Percentage: {self.th_percentage_slider_2.value() / 100}%")
         self.window_size_slider_lbl.setText(f"Window Size: {self.window_size_slider.value()}")
 
     def draw_corners_eigenvalues(self):
@@ -1513,7 +1522,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         Draws corners and eigenvalues on an image using the Harris Corner Detection algorithm.
         
         This function starts a timer, retrieves the image from the 'feature_detection_1' key in the 'image' dictionary,
-        and passes it to the 'lambda_minus_croner_detection' function to obtain the corners and execution time. 
+        and passes it to the 'lambda_minus_corner_detection' function to obtain the corners and execution time.
         It then creates a copy of the image and draws circles on the original image at the detected corners.
         The resulting image is displayed using the 'display_image' function.
         
@@ -1531,7 +1540,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         img = self.image['feature_detection_1']
         window_size = int(self.window_size_slider.value())
         th_percentage = float(self.th_percentage_slider.value() / 100)
-        corners = lambda_minus_croner_detection(img, window_size, th_percentage) #window_size = 5,th_percentage = 0.01
+        corners = feature_extraction.lambda_minus_corner_detection(img, window_size, th_percentage)  # window_size = 5,th_percentage = 0.01
         # Draw corners on the original image
         img_with_corners = img.copy()
         for corner in corners:
@@ -1545,18 +1554,18 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.comp_time_lbl.setText(f"Computation Time: {execution_time * 1000:.2f}ms")
 
     def draw_harris_corners(self):
-       # Start the timer
+        # Start the timer
         start_time = time.time()
         img = self.image['feature_detection_1']
         window_size = int(self.window_size_slider.value())
         th_percentage = float(self.th_percentage_slider.value() / 100)
         k = 0.04  # Define the k value
-        corners = harris_corner_detection(img, window_size, k, th_percentage)
+        corners = feature_extraction.harris_corner_detection(img, window_size, k, th_percentage)
         # Draw corners on the original image
         img_with_corners = img.copy()
         # Draw the detected corners on the original image
         for corner in corners:
-                cv2.circle(img_with_corners, tuple(corner[::-1]), 5, (255, 0, 0), 2)  # Draw circle at each corner
+            cv2.circle(img_with_corners, tuple(corner[::-1]), 5, (255, 0, 0), 2)  # Draw circle at each corner
         self.display_image(img_with_corners, self.image_after_harris)
         # End the timer
         end_time = time.time()
@@ -1564,8 +1573,36 @@ class MainApp(QMainWindow, FORM_CLASS):
         # Calculate the execution time
         execution_time = end_time - start_time
         self.comp_time_lbl.setText(f"Computation Time: {execution_time * 1000:.2f}ms")
-        
-        
+
+    def match_images(self):
+        self.match_progressBar.setValue(0)
+        # Load images
+        image1 = self.image['image_to_match']
+        image2 = self.image['image_to_be_matched']
+        self.match_progressBar.setValue(5)
+        # Detect corners
+        th_percentage = float(self.th_percentage_slider_2.value() / 100)
+        corners_image1 = feature_extraction.lambda_minus_corner_detection(image1, th_percentage=th_percentage)
+        corners_image2 = feature_extraction.lambda_minus_corner_detection(image2, th_percentage=th_percentage)
+        self.match_progressBar.setValue(10)
+        # Extract feature descriptors
+        descriptors_image1 = feature_extraction.extract_feature_descriptors(image1, corners_image1)
+        descriptors_image2 = feature_extraction.extract_feature_descriptors(image2, corners_image2)
+        self.match_progressBar.setValue(20)
+        # Match features
+        if self.ncc_radio_button.isChecked():
+            matches = feature_extraction.match_features(descriptors_image1, descriptors_image2, method='NCC')
+        else:
+            matches = feature_extraction.match_features(descriptors_image1, descriptors_image2, method='SSD')
+        self.match_progressBar.setValue(60)
+        matches_cv2 = [cv2.DMatch(match[0], match[1], 0) for match in matches]
+        self.match_progressBar.setValue(80)
+        # Draw matches
+        matched_image = feature_extraction.draw_matches(image1, corners_image1, image2, corners_image2, matches_cv2)
+        self.match_progressBar.setValue(100)
+        # Display the matched image
+        self.display_image(matched_image, self.matched_image)
+
 
 
 def main():

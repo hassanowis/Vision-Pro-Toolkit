@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 
-def lambda_minus_croner_detection(img, window_size=5, th_percentage=0.01):
+def lambda_minus_corner_detection(img, window_size=5, th_percentage=0.01):
     """
     Detects corners in an image using the Lambda-Minus corner detection algorithm.
 
@@ -54,9 +54,10 @@ def lambda_minus_croner_detection(img, window_size=5, th_percentage=0.01):
 
     return corners
 
+
 def harris_corner_detection(img, window_size=5, k=0.04, th_percentage=0.01):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    Ix = cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=3)    
+    Ix = cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=3)
     Iy = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=3)
     # Compute elements of the structure tensor
     Ix2 = Ix ** 2
@@ -68,21 +69,12 @@ def harris_corner_detection(img, window_size=5, k=0.04, th_percentage=0.01):
     Sxy = cv2.boxFilter(Ixy, -1, (window_size, window_size))
     # Compute Harris response for each pixel
     R = (Sx2 * Sy2 - Sxy ** 2) - k * (Sx2 + Sy2) ** 2
-        
+
     # Threshold the Harris response to obtain corner candidates
     threshold = th_percentage * np.max(R)
     corners = np.argwhere(R > threshold)  # Extract corner coordinates
 
     return corners
-        
-    # Draw the detected corners on the original image
-    harris_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # Convert to RGB for display    
-    for corner in corners:
-            cv2.circle(harris_image, tuple(corner[::-1]), 5, (255, 0, 0), 2)  # Draw circle at each corner
-        
-    return harris_image
-
-
 
 
 def extract_feature_descriptors(img, corners, patch_size=16):
@@ -102,10 +94,20 @@ def extract_feature_descriptors(img, corners, patch_size=16):
     descriptors = []
     for corner in corners:
         x, y = corner
-        patch = img_gray[y - patch_size // 2:y + patch_size // 2,
-                x - patch_size // 2:x + patch_size // 2].flatten()
-        descriptors.append(patch)
+        # Ensure patch is within image boundaries
+        patch_x_min = max(0, x - patch_size // 2)
+        patch_x_max = min(img_gray.shape[1], x + patch_size // 2)
+        patch_y_min = max(0, y - patch_size // 2)
+        patch_y_max = min(img_gray.shape[0], y + patch_size // 2)
+        # Extract fixed-size patch around corner
+        patch = img_gray[patch_y_min:patch_y_max, patch_x_min:patch_x_max]
+        # If patch size is less than desired, skip this corner
+        if patch.shape != (patch_size, patch_size):
+            continue
+        # Flatten the patch and append to descriptors list
+        descriptors.append(patch.flatten())
     return np.array(descriptors)
+
 
 
 def match_features(descriptors1, descriptors2, method='SSD'):
@@ -131,11 +133,23 @@ def match_features(descriptors1, descriptors2, method='SSD'):
                     best_match_score = score
                     best_match_index = j
             else:
+                norm1 = np.linalg.norm(descriptor1)
+                norm2 = np.linalg.norm(descriptor2)
                 correlation = np.sum(descriptor1 * descriptor2)
-                norm = np.linalg.norm(descriptor1) * np.linalg.norm(descriptor2)
-                score = correlation / norm
+                score = correlation / (norm1 * norm2)  # Calculate normalized correlation score
                 if score > best_match_score:
                     best_match_score = score
                     best_match_index = j
         matches.append((i, best_match_index))
     return matches
+
+
+def draw_matches(img1, corners_image1, img2, corners_image2, matches):
+    # Convert corner coordinates to Keypoint objects for OpenCV
+    keypoints_image1 = [cv2.KeyPoint(x, y, 1) for (x, y) in corners_image1]
+    keypoints_image2 = [cv2.KeyPoint(x, y, 1) for (x, y) in corners_image2]
+
+    # Draw matches between two images
+    output_img = cv2.drawMatches(img1, keypoints_image1, img2, keypoints_image2, matches, None,
+                                 flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+    return output_img
