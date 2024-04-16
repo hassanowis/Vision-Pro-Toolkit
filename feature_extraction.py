@@ -144,10 +144,10 @@ def match_features(descriptors1, descriptors2, method='SSD'):
     return matches
 
 
-def draw_matches(img1, corners_image1, img2, corners_image2, matches):
-    # Convert corner coordinates to Keypoint objects for OpenCV
-    keypoints_image1 = [cv2.KeyPoint(x, y, 1) for (x, y) in corners_image1]
-    keypoints_image2 = [cv2.KeyPoint(x, y, 1) for (x, y) in corners_image2]
+def draw_matches(img1, keypoints_image1, img2, keypoints_image2, matches):
+    # # Convert corner coordinates to Keypoint objects for OpenCV
+    # keypoints_image1 = [cv2.KeyPoint(x, y, 1) for (x, y) in corners_image1]
+    # keypoints_image2 = [cv2.KeyPoint(x, y, 1) for (x, y) in corners_image2]
 
     # Draw matches between two images
     output_img = cv2.drawMatches(img1, keypoints_image1, img2, keypoints_image2, matches, None,

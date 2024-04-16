@@ -42,9 +42,6 @@ from skimage.filters import sobel
 import cv2
 from scipy.ndimage import gaussian_filter
 from PIL import Image, ImageDraw
-import feature_extraction
-from sift import siftapply
-import time
 
 # from skimage.filters import sobel
 from scipy.interpolate import RectBivariateSpline
@@ -78,11 +75,6 @@ class MainApp(QMainWindow, FORM_CLASS):
             "before_contour": None,
             "contour": None,
             "edge_detection_1": None,
-            "feature_detection_1": None,
-            "image_to_match": None,
-            "image_to_be_matched": None,
-            "sift": None,
-            "after_sift": None,
         }
         self.hide_visibility("noise")
         self.hide_visibility("filter")
@@ -125,22 +117,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.image_tobe_masked.mouseDoubleClickEvent = lambda event: self.handle_mouse(event,
                                                                                        label=self.image_tobe_masked,
                                                                                        type='edge_detection_1')
-
-        self.image_before_harris.mouseDoubleClickEvent = lambda event: self.handle_mouse(event,
-                                                                                         label=self.image_before_harris,
-                                                                                         type='feature_detection_1')
-        self.image_before_sift.mouseDoubleClickEvent = lambda event: self.handle_mouse(event,
-                                                                                label=self.image_before_sift,
-                                                                                type='sift')
-        self.image_to_match.mouseDoubleClickEvent = lambda event: self.handle_mouse(event,
-                                                                                    label=self.image_to_match,
-                                                                                    type='image_to_match')
-        self.image_to_be_matched.mouseDoubleClickEvent = lambda event: self.handle_mouse(event,
-                                                                                         label=self.image_to_be_matched,
-                                                                                         type='image_to_be_matched')
-        self.match_images_btn.clicked.connect(self.match_images)
-        self.apply_sift_btn.clicked.connect(self.apply_sift)
-        self.feature_detection_apply_btn.clicked.connect(self.apply_feature_detection)
         self.MIX_btn.clicked.connect(self.mix_images)
         self.shapedetect_btn.clicked.connect(self.detect_shape)
         self.normalize_btn.clicked.connect(self.normalize_image)
@@ -149,9 +125,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.mix2_combo_box.currentIndexChanged.connect(self.plot_frequency_filter_2)
         self.mix1_slider.valueChanged.connect(self.plot_frequency_filter_1)
         self.mix2_slider.valueChanged.connect(self.plot_frequency_filter_2)
-        self.th_percentage_slider.valueChanged.connect(self.slider_changed)
-        self.th_percentage_slider_2.valueChanged.connect(self.slider_changed)
-        self.window_size_slider.valueChanged.connect(self.slider_changed)
 
     # Function to handle mouse events
     def handle_mouse(self, event, label, type='original'):
@@ -1460,18 +1433,21 @@ class MainApp(QMainWindow, FORM_CLASS):
         Returns:
             None
         """
+        # if self.image['before_contour'] is None:
+        #     return
+        # # Create Initial Contour
+        # initial_contour = np.array([[10, 10], [10, 350], [350, 350], [350, 10]])
+        # # Create Active Contour object
+        # contour = ActiveContour(self.image['before_contour'], initial_contour)
+        # # Apply active contour
+        # contour.evolve_contour()
+        # # Draw the contours on the original image
+        # contour.display_contour(self.image_after_contour)
+        # self.draw_initial_contour_points()
         self.apply_contour_algorithm()
+        # print("Contour Applied")
 
     def detect_shape(self):
-        """
-        Detects the shape of an object in an image.
-
-        Parameters:
-            None
-
-        Returns:
-            None
-        """
         shape_type = self.shape_combox.currentText()
 
         # print(min_radius, max_radius)
@@ -1500,132 +1476,6 @@ class MainApp(QMainWindow, FORM_CLASS):
             masked_image = detect.draw_hough_ellipses(a, b, r1, r2, self.image['edge_detection_1'].copy())
 
         self.display_image(masked_image, self.masked_image)
-
-    def apply_feature_detection(self):
-        """
-        Apply feature detection to the input image.
-
-        Returns:
-            None
-        """
-        if self.lambda_minus_radioButton.isChecked():
-            self.draw_corners_eigenvalues()
-        elif self.harris_radioButton.isChecked():
-            self.draw_harris_corners()
-
-    def slider_changed(self):
-        """
-        Updates the threshold percentage label based on the slider value.
-
-        Returns:
-            None
-        """
-        self.th_percentage_slider_lbl.setText(f"Threshold Percentage: {self.th_percentage_slider.value() / 100}%")
-        self.th_percentage_slider_lbl_2.setText(f"Threshold Percentage: {self.th_percentage_slider_2.value() / 100}%")
-        self.window_size_slider_lbl.setText(f"Window Size: {self.window_size_slider.value()}")
-
-    def draw_corners_eigenvalues(self):
-        """
-        Draws corners and eigenvalues on an image using the Harris Corner Detection algorithm.
-        
-        This function starts a timer, retrieves the image from the 'feature_detection_1' key in the 'image' dictionary,
-        and passes it to the 'lambda_minus_corner_detection' function to obtain the corners and execution time.
-        It then creates a copy of the image and draws circles on the original image at the detected corners.
-        The resulting image is displayed using the 'display_image' function.
-        
-        After that, the function ends the timer and calculates the execution time in seconds.
-        The execution time is then displayed in the 'comp_time_lbl' label in milliseconds.
-        
-        Parameters:
-            self (object): The instance of the class.
-        
-        Returns:
-            None
-        """
-        # Start the timer
-        start_time = time.time()
-        img = self.image['feature_detection_1']
-        window_size = int(self.window_size_slider.value())
-        th_percentage = float(self.th_percentage_slider.value() / 100)
-        corners = feature_extraction.lambda_minus_corner_detection(img, window_size, th_percentage)  # window_size = 5,th_percentage = 0.01
-        # Draw corners on the original image
-        img_with_corners = img.copy()
-        for corner in corners:
-            cv2.circle(img_with_corners, corner, 5, (0, 0, 255), 2)  # Red color for corners
-        self.display_image(img_with_corners, self.image_after_harris)
-        # End the timer
-        end_time = time.time()
-
-        # Calculate the execution time
-        execution_time = end_time - start_time  # in seconds
-        self.comp_time_lbl.setText(f"Computation Time: {execution_time * 1000:.2f}ms")
-
-    def draw_harris_corners(self):
-        # Start the timer
-        start_time = time.time()
-        img = self.image['feature_detection_1']
-        window_size = int(self.window_size_slider.value())
-        th_percentage = float(self.th_percentage_slider.value() / 100)
-        k = 0.04  # Define the k value
-        corners = feature_extraction.harris_corner_detection(img, window_size, k, th_percentage)
-        # Draw corners on the original image
-        img_with_corners = img.copy()
-        # Draw the detected corners on the original image
-        for corner in corners:
-            cv2.circle(img_with_corners, tuple(corner[::-1]), 5, (255, 0, 0), 2)  # Draw circle at each corner
-        self.display_image(img_with_corners, self.image_after_harris)
-        # End the timer
-        end_time = time.time()
-
-        # Calculate the execution time
-        execution_time = end_time - start_time
-        self.comp_time_lbl.setText(f"Computation Time: {execution_time * 1000:.2f}ms")
-
-    def match_images(self):
-        self.match_progressBar.setValue(0)
-        # Load images
-        image1 = cv2.cvtColor(self.image['image_to_match'], cv2.COLOR_BGR2GRAY)
-        image2 = cv2.cvtColor(self.image['image_to_be_matched'], cv2.COLOR_BGR2GRAY)
-
-        sift1 = siftapply(image1)
-        sift2 = siftapply(image2)
-
-        self.match_progressBar.setValue(5)
-        # # Detect corners
-        # th_percentage = float(self.th_percentage_slider_2.value() / 100)
-        # corners_image1 = feature_extraction.lambda_minus_corner_detection(image1, th_percentage=th_percentage)
-        # corners_image2 = feature_extraction.lambda_minus_corner_detection(image2, th_percentage=th_percentage)
-        self.match_progressBar.setValue(10)
-        # Extract feature descriptors
-        descriptors_image1 = sift1.return_descriptors()
-        descriptors_image2 = sift2.return_descriptors()
-
-        self.match_progressBar.setValue(20)
-        # Match features
-        if self.ncc_radio_button.isChecked():
-            matches = feature_extraction.match_features(descriptors_image1, descriptors_image2, method='NCC')
-        else:
-            matches = feature_extraction.match_features(descriptors_image1, descriptors_image2, method='SSD')
-        self.match_progressBar.setValue(60)
-        matches_cv2 = [cv2.DMatch(match[0], match[1], 0) for match in matches]
-        self.match_progressBar.setValue(80)
-        # Draw matches
-        keypoints_image1 = sift1.return_keypoints()
-        keypoints_image2 = sift2.return_keypoints()
-        matched_image = feature_extraction.draw_matches(image1, keypoints_image1, image2, keypoints_image2, matches_cv2)
-        self.match_progressBar.setValue(100)
-        # Display the matched image
-        self.display_image(matched_image, self.matched_image)
-
-    def apply_sift(self):
-        grey_scale_image = cv2.cvtColor(self.image['sift'], cv2.COLOR_BGR2GRAY)
-        sift = siftapply(grey_scale_image)
-        keypoint = sift.return_keypoints()
-        descriptor = sift.return_descriptors()
-        self.image['after_sift'] = cv2.drawKeypoints(self.image['sift'], keypoint, None,
-                                                     flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-
-        self.display_image(self.image['after_sift'], self.sift_label)
 
 
 def main():

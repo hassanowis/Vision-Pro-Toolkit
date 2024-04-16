@@ -22,8 +22,7 @@ class shapedetection:
             rho_values = np.round(x * cos_theta + y * sin_theta).astype(int)
             np.add.at(hough_space, (rho_values + diagonal, np.arange(180)), 1)
 
-        threshold = int(self.threshold)  # or float(self.threshold) depending on your needs
-        rows, cols = np.where(hough_space >= threshold)
+        rows, cols = np.where(hough_space >= self.threshold)
         diag = rows - diagonal
         theta = cols        
         return diag, theta
@@ -43,8 +42,8 @@ class shapedetection:
                 valid_indices = np.where((a >= 0) & (a < w) & (b >= 0) & (b < h))
                 a_valid, b_valid = a[valid_indices], b[valid_indices]
                 hough_space[b_valid, a_valid, r - min_radius] += 1
-        threshold = int(self.threshold)
-        a, b, radius = np.where(hough_space >= threshold)
+
+        a, b, radius = np.where(hough_space >= self.threshold)
         return a, b, radius + min_radius
     
     def hough_ellipse_detection(self, min_radius_1=60, max_radius_1=100,min_radius_2=60,max_radius_2=100):
@@ -66,8 +65,7 @@ class shapedetection:
                     a_valid, b_valid = a[valid_indices], b[valid_indices]
                     hough_space[b_valid, a_valid, r1 - min_radius_1,r2 - min_radius_2] += 1
         # print(hough_space)
-        threshold = int(self.threshold)
-        a, b, radius_1,radius_2 = np.where(hough_space >= threshold)
+        a, b, radius_1,radius_2 = np.where(hough_space >= self.threshold)
         return a, b, radius_1 + min_radius_1,radius_2 + min_radius_2
     
     def draw_hough_ellipses(self, a, b, radius_1,radius_2, edged_image):
