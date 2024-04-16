@@ -124,8 +124,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.image_before_harris.mouseDoubleClickEvent = lambda event: self.handle_mouse(event,
                                                                                        label=self.image_before_harris,
                                                                                        type='feature_detection_1')
-        self.radioButton_2.clicked.connect(self.draw_corners_eigenvalues)
-        
+        self.feature_detection_apply_btn.clicked.connect(self.apply_feature_detection)
         self.MIX_btn.clicked.connect(self.mix_images)
         self.shapedetect_btn.clicked.connect(self.detect_shape)
         self.normalize_btn.clicked.connect(self.normalize_image)
@@ -134,6 +133,8 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.mix2_combo_box.currentIndexChanged.connect(self.plot_frequency_filter_2)
         self.mix1_slider.valueChanged.connect(self.plot_frequency_filter_1)
         self.mix2_slider.valueChanged.connect(self.plot_frequency_filter_2)
+        self.th_percentage_slider.valueChanged.connect(self.slider_changed)
+        self.window_size_slider.valueChanged.connect(self.slider_changed)
 
     # Function to handle mouse events
     def handle_mouse(self, event, label, type='original'):
@@ -1484,6 +1485,29 @@ class MainApp(QMainWindow, FORM_CLASS):
 
         self.display_image(masked_image, self.masked_image)
 
+    def apply_feature_detection(self):
+        """
+        Apply feature detection to the input image.
+
+        Returns:
+            None
+        """
+        if self.lambda_minus_radioButton.isChecked():
+            self.draw_corners_eigenvalues()
+        elif self.harris_radioButton.isChecked():
+            pass
+            # self.draw_corners_harris()
+
+    def slider_changed(self):
+        """
+        Updates the threshold percentage label based on the slider value.
+
+        Returns:
+            None
+        """
+        self.th_percentage_slider_lbl.setText(f"Threshold Percentage: {self.th_percentage_slider.value() / 100}%")
+        self.window_size_slider_lbl.setText(f"Window Size: {self.window_size_slider.value()}")
+
     def draw_corners_eigenvalues(self):
         """
         Draws corners and eigenvalues on an image using the Harris Corner Detection algorithm.
@@ -1505,7 +1529,9 @@ class MainApp(QMainWindow, FORM_CLASS):
         # Start the timer
         start_time = time.time()
         img = self.image['feature_detection_1']
-        corners = lambda_minus_croner_detection(img) #window_size = 5,th_percentage = 0.01
+        window_size = int(self.window_size_slider.value())
+        th_percentage = float(self.th_percentage_slider.value() / 100)
+        corners = lambda_minus_croner_detection(img, window_size, th_percentage) #window_size = 5,th_percentage = 0.01
         # Draw corners on the original image
         img_with_corners = img.copy()
         for corner in corners:
