@@ -42,7 +42,7 @@ from skimage.filters import sobel
 import cv2
 from scipy.ndimage import gaussian_filter
 from PIL import Image, ImageDraw
-from feature_extraction import lambda_minus_croner_detection
+from feature_extraction import lambda_minus_croner_detection, harris_corner_detection
 import time
 
 # from skimage.filters import sobel
@@ -1495,8 +1495,8 @@ class MainApp(QMainWindow, FORM_CLASS):
         if self.lambda_minus_radioButton.isChecked():
             self.draw_corners_eigenvalues()
         elif self.harris_radioButton.isChecked():
-            pass
-            # self.draw_corners_harris()
+            self.draw_harris_corners()
+            
 
     def slider_changed(self):
         """
@@ -1543,6 +1543,29 @@ class MainApp(QMainWindow, FORM_CLASS):
         # Calculate the execution time
         execution_time = end_time - start_time  # in seconds
         self.comp_time_lbl.setText(f"Computation Time: {execution_time * 1000:.2f}ms")
+
+    def draw_harris_corners(self):
+       # Start the timer
+        start_time = time.time()
+        img = self.image['feature_detection_1']
+        window_size = int(self.window_size_slider.value())
+        th_percentage = float(self.th_percentage_slider.value() / 100)
+        k = 0.04  # Define the k value
+        corners = harris_corner_detection(img, window_size, k, th_percentage)
+        # Draw corners on the original image
+        img_with_corners = img.copy()
+        # Draw the detected corners on the original image
+        for corner in corners:
+                cv2.circle(img_with_corners, tuple(corner[::-1]), 5, (255, 0, 0), 2)  # Draw circle at each corner
+        self.display_image(img_with_corners, self.image_after_harris)
+        # End the timer
+        end_time = time.time()
+
+        # Calculate the execution time
+        execution_time = end_time - start_time
+        self.comp_time_lbl.setText(f"Computation Time: {execution_time * 1000:.2f}ms")
+        
+        
 
 
 def main():

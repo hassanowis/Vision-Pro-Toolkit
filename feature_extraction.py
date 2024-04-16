@@ -54,6 +54,36 @@ def lambda_minus_croner_detection(img, window_size=5, th_percentage=0.01):
 
     return corners
 
+def harris_corner_detection(img, window_size=5, k=0.04, th_percentage=0.01):
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    Ix = cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=3)    
+    Iy = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=3)
+    # Compute elements of the structure tensor
+    Ix2 = Ix ** 2
+    Iy2 = Iy ** 2
+    Ixy = Ix * Iy
+    # Compute sums of structure tensor elements over a local window
+    Sx2 = cv2.boxFilter(Ix2, -1, (window_size, window_size))
+    Sy2 = cv2.boxFilter(Iy2, -1, (window_size, window_size))
+    Sxy = cv2.boxFilter(Ixy, -1, (window_size, window_size))
+    # Compute Harris response for each pixel
+    R = (Sx2 * Sy2 - Sxy ** 2) - k * (Sx2 + Sy2) ** 2
+        
+    # Threshold the Harris response to obtain corner candidates
+    threshold = th_percentage * np.max(R)
+    corners = np.argwhere(R > threshold)  # Extract corner coordinates
+
+    return corners
+        
+    # Draw the detected corners on the original image
+    harris_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # Convert to RGB for display    
+    for corner in corners:
+            cv2.circle(harris_image, tuple(corner[::-1]), 5, (255, 0, 0), 2)  # Draw circle at each corner
+        
+    return harris_image
+
+
+
 
 def extract_feature_descriptors(img, corners, patch_size=16):
     """
