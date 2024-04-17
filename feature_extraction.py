@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from sift import siftapply
 
 
 def lambda_minus_corner_detection(img, window_size=5, th_percentage=0.01):
@@ -77,71 +78,122 @@ def harris_corner_detection(img, window_size=5, k=0.04, th_percentage=0.01):
     return corners
 
 
-def extract_feature_descriptors(img, corners, patch_size=16):
+def template_matching_sqdiff(original_img, template_img):
     """
-    Extract feature descriptors around detected corners in an image.
+    Match a template image to an original image using Sum of Squared Differences (SSD).
 
     Parameters:
-        img (numpy.ndarray): The input image.
-        corners (list): A list of tuples representing the coordinates of the detected corners.
-        patch_size (int, optional): The size of the patch around each corner to extract feature descriptor. Defaults to 16.
+        original_img (numpy.ndarray): The original image.
+        template_img (numpy.ndarray): The template image to be matched.
 
     Returns:
-        numpy.ndarray: An array of feature descriptors.
+        tuple: A tuple containing the coordinates of the top-left corner of the matched region.
     """
-    # Convert image to grayscale
-    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    descriptors = []
-    for corner in corners:
-        x, y = corner
-        # Ensure patch is within image boundaries
-        patch_x_min = max(0, x - patch_size // 2)
-        patch_x_max = min(img_gray.shape[1], x + patch_size // 2)
-        patch_y_min = max(0, y - patch_size // 2)
-        patch_y_max = min(img_gray.shape[0], y + patch_size // 2)
-        # Extract fixed-size patch around corner
-        patch = img_gray[patch_y_min:patch_y_max, patch_x_min:patch_x_max]
-        # If patch size is less than desired, skip this corner
-        if patch.shape != (patch_size, patch_size):
-            continue
-        # Flatten the patch and append to descriptors list
-        descriptors.append(patch.flatten())
-    return np.array(descriptors)
+    # Get dimensions of original and template images
+    original_h, original_w = original_img.shape[:2]
+    template_h, template_w = template_img.shape[:2]
+
+    # Calculate SSD for each possible position of the template within the original image
+    min_ssd = float('inf')
+    min_loc = (0, 0)
+
+    for y in range(original_h - template_h + 1):
+        for x in range(original_w - template_w + 1):
+            patch = original_img[y:y+template_h, x:x+template_w]
+            ssd = np.sum((patch - template_img) ** 2)
+            if ssd < min_ssd:
+                min_ssd = ssd
+                min_loc = (x, y)
+
+    return min_loc
 
 
-
-def match_features(descriptors1, descriptors2, method='SSD'):
+def template_matching_ccorr_normed(original_img, template_img):
     """
-    Match feature descriptors between two sets using SSD or normalized cross-correlation.
+    Match a template image to an original image using Normalized Cross-Correlation (NCC).
 
     Parameters:
-        descriptors1 (numpy.ndarray): Feature descriptors of the first image.
-        descriptors2 (numpy.ndarray): Feature descriptors of the second image.
-        method (str, optional): Matching method, either 'SSD' or 'NCC'. Defaults to 'SSD'.
+        original_img (numpy.ndarray): The original image.
+        template_img (numpy.ndarray): The template image to be matched.
 
     Returns:
-        list: A list of tuples representing matched feature indices between two sets.
+        tuple: A tuple containing the coordinates of the top-left corner of the matched region.
     """
-    matches = []
-    for i, descriptor1 in enumerate(descriptors1):
-        best_match_index = None
-        best_match_score = float('inf') if method == 'SSD' else -1
-        for j, descriptor2 in enumerate(descriptors2):
-            if method == 'SSD':
-                score = np.sum((descriptor1 - descriptor2) ** 2)
-                if score < best_match_score:
-                    best_match_score = score
-                    best_match_index = j
-            else:
-                norm1 = np.linalg.norm(descriptor1)
-                norm2 = np.linalg.norm(descriptor2)
-                correlation = np.sum(descriptor1 * descriptor2)
-                score = correlation / (norm1 * norm2)  # Calculate normalized correlation score
-                if score > best_match_score:
-                    best_match_score = score
-                    best_match_index = j
-        matches.append((i, best_match_index))
-    return matches
+    # Get dimensions of original and template images
+    original_h, original_w = original_img.shape[:2]
+    template_h, template_w = template_img.shape[:2]
+
+    # Calculate NCC for each possible position of the template within the original image
+    max_ncc = -float('inf')
+    max_loc = (0, 0)
+
+    for y in range(original_h - template_h + 1):
+        for x in range(original_w - template_w + 1):
+            patch = original_img[y:y+template_h, x:x+template_w]
+            ncc = np.sum(patch * template_img) / (np.sqrt(np.sum(patch ** 2)) * np.sqrt(np.sum(template_img ** 2))
+                                                  + 1e-6)  # Add small epsilon to avoid division by zero
+            if ncc > max_ncc:
+                max_ncc = ncc
+                max_loc = (x, y)
+
+    return max_loc
+
+
+def template_matching_and_draw_roi(original_img, template_img, method='SSD'):
+    """
+    Match a template image to an original image using SSD, NCC, or SIFT, and draw a rectangular ROI.
+
+    Parameters:
+        original_img (numpy.ndarray): The original image.
+        template_img (numpy.ndarray): The template image to be matched.
+        method (str, optional): Matching method, either 'SSD', 'NCC', or 'SIFT'. Defaults to 'SSD'.
+
+    Returns:
+        numpy.ndarray: The original image with the ROI drawn.
+    """
+    # Choose matching method
+    if method == 'SSD':
+        top_left = template_matching_sqdiff(original_img, template_img)
+        bottom_right = (top_left[0] + template_img.shape[1], top_left[1] + template_img.shape[0])
+    elif method == 'NCC':
+        top_left = template_matching_ccorr_normed(original_img, template_img)
+        bottom_right = (top_left[0] + template_img.shape[1], top_left[1] + template_img.shape[0])
+    else:
+        sift_original = siftapply(original_img)
+        sift_template = siftapply(template_img)
+        keypoints_original, descriptors_original = sift_original.return_keypoints(), sift_original.return_descriptors()
+        keypoints_template, descriptors_template = sift_template.return_keypoints(), sift_template.return_descriptors()
+
+        bf = cv2.BFMatcher()
+        matches = bf.knnMatch(descriptors_template, descriptors_original, k=2)
+
+        good_matches = []
+        for m, n in matches:
+            if m.distance < 0.75 * n.distance:
+                good_matches.append(m)
+
+        template_pts = np.float32([keypoints_template[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+        original_pts = np.float32([keypoints_original[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+
+        M, _ = cv2.findHomography(template_pts, original_pts, cv2.RANSAC)
+
+        h, w = template_img.shape[:2]
+        template_corners = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
+
+        transformed_corners = cv2.perspectiveTransform(template_corners, M)
+
+        top_left = tuple(np.int32(transformed_corners.min(axis=0).ravel()))
+        bottom_right = tuple(np.int32(transformed_corners.max(axis=0).ravel()))
+
+    # Check if top_left is None
+    if top_left is None:
+        return original_img  # Return original image if template not found
+
+    # Draw ROI on the original image
+    cv2.rectangle(original_img, top_left, bottom_right, (0, 255, 0), 2)
+
+    return original_img
+
 
 
 def draw_matches(img1, keypoints_image1, img2, keypoints_image2, matches):

@@ -150,7 +150,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.mix1_slider.valueChanged.connect(self.plot_frequency_filter_1)
         self.mix2_slider.valueChanged.connect(self.plot_frequency_filter_2)
         self.th_percentage_slider.valueChanged.connect(self.slider_changed)
-        self.th_percentage_slider_2.valueChanged.connect(self.slider_changed)
         self.window_size_slider.valueChanged.connect(self.slider_changed)
 
     # Function to handle mouse events
@@ -229,7 +228,7 @@ class MainApp(QMainWindow, FORM_CLASS):
             if file_paths:
                 # resize image to fit the label before storing it
                 image = cv2.imread(file_paths[0])
-                image = cv2.resize(image, (label.width(), label.height()))
+                # image = cv2.resize(image, (label.width(), label.height()))
                 # clear the dictionary
                 self.clear_dict()
                 self.image[type] = image
@@ -248,7 +247,7 @@ class MainApp(QMainWindow, FORM_CLASS):
                     self.display_image(self.image[type], label)
 
     # Function to display an image on a QLabel
-    def display_image(self, image, label):
+    def display_image(self, image, label, resize=True):
         """
         Displays the given image on the specified label.
 
@@ -264,7 +263,8 @@ class MainApp(QMainWindow, FORM_CLASS):
                 image = image.astype(np.uint8)  # Convert to uint8 without normalization
 
         # Resize the image to fit the label
-        image = cv2.resize(image, (label.width(), label.height()))
+        if resize:
+            image = cv2.resize(image, (label.width(), label.height()))
 
         # Convert BGR to RGB
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -1521,7 +1521,6 @@ class MainApp(QMainWindow, FORM_CLASS):
             None
         """
         self.th_percentage_slider_lbl.setText(f"Threshold Percentage: {self.th_percentage_slider.value() / 100}%")
-        self.th_percentage_slider_lbl_2.setText(f"Threshold Percentage: {self.th_percentage_slider_2.value() / 100}%")
         self.window_size_slider_lbl.setText(f"Window Size: {self.window_size_slider.value()}")
 
     def draw_corners_eigenvalues(self):
@@ -1584,38 +1583,28 @@ class MainApp(QMainWindow, FORM_CLASS):
     def match_images(self):
         self.match_progressBar.setValue(0)
         # Load images
-        image1 = cv2.cvtColor(self.image['image_to_match'], cv2.COLOR_BGR2GRAY)
-        image2 = cv2.cvtColor(self.image['image_to_be_matched'], cv2.COLOR_BGR2GRAY)
+        Original_image = cv2.cvtColor(self.image['image_to_match'], cv2.COLOR_BGR2GRAY)
+        temp_image = cv2.cvtColor(self.image['image_to_be_matched'], cv2.COLOR_BGR2GRAY)
 
-        sift1 = siftapply(image1)
-        sift2 = siftapply(image2)
-
-        self.match_progressBar.setValue(5)
-        # # Detect corners
-        # th_percentage = float(self.th_percentage_slider_2.value() / 100)
-        # corners_image1 = feature_extraction.lambda_minus_corner_detection(image1, th_percentage=th_percentage)
-        # corners_image2 = feature_extraction.lambda_minus_corner_detection(image2, th_percentage=th_percentage)
-        self.match_progressBar.setValue(10)
-        # Extract feature descriptors
-        descriptors_image1 = sift1.return_descriptors()
-        descriptors_image2 = sift2.return_descriptors()
+        # Define a callback function to update the progress bar
 
         self.match_progressBar.setValue(20)
         # Match features
         if self.ncc_radio_button.isChecked():
-            matches = feature_extraction.match_features(descriptors_image1, descriptors_image2, method='NCC')
+            result_image = feature_extraction.template_matching_and_draw_roi(
+            Original_image, temp_image, method='NCC')
+        elif self.ssd_radio_button.isChecked():
+            result_image = feature_extraction.template_matching_and_draw_roi(
+            Original_image, temp_image, method='SSD')
         else:
-            matches = feature_extraction.match_features(descriptors_image1, descriptors_image2, method='SSD')
-        self.match_progressBar.setValue(60)
-        matches_cv2 = [cv2.DMatch(match[0], match[1], 0) for match in matches]
-        self.match_progressBar.setValue(80)
-        # Draw matches
-        keypoints_image1 = sift1.return_keypoints()
-        keypoints_image2 = sift2.return_keypoints()
-        matched_image = feature_extraction.draw_matches(image1, keypoints_image1, image2, keypoints_image2, matches_cv2)
+            result_image = feature_extraction.template_matching_and_draw_roi(
+            Original_image, temp_image, method='SIFT')
+
         self.match_progressBar.setValue(100)
         # Display the matched image
-        self.display_image(matched_image, self.matched_image)
+        self.display_image(result_image, self.matched_image)
+
+
 
     def apply_sift(self):
         grey_scale_image = cv2.cvtColor(self.image['sift'], cv2.COLOR_BGR2GRAY)

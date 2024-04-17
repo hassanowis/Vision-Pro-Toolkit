@@ -550,7 +550,7 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
 }</string>
       </property>
       <property name="currentIndex">
-       <number>5</number>
+       <number>6</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -1986,24 +1986,10 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
                   </property>
                  </widget>
                 </item>
-               </layout>
-              </item>
-              <item>
-               <layout class="QVBoxLayout" name="verticalLayout_24">
                 <item>
-                 <widget class="QLabel" name="th_percentage_slider_lbl_2">
+                 <widget class="QRadioButton" name="sift_radio_button">
                   <property name="text">
-                   <string>Threshold Percentage: 0.01</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QSlider" name="th_percentage_slider_2">
-                  <property name="maximum">
-                   <number>100</number>
-                  </property>
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
+                   <string>SIFT</string>
                   </property>
                  </widget>
                 </item>
