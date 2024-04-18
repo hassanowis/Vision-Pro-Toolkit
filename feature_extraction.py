@@ -207,14 +207,3 @@ def template_matching_and_draw_roi(original_img, template_img, method='SSD'):
     cv2.rectangle(original_img, top_left, bottom_right, (0, 255, 0), 2)
 
     return original_img
-
-
-def draw_matches(img1, keypoints_image1, img2, keypoints_image2, matches):
-    # # Convert corner coordinates to Keypoint objects for OpenCV
-    # keypoints_image1 = [cv2.KeyPoint(x, y, 1) for (x, y) in corners_image1]
-    # keypoints_image2 = [cv2.KeyPoint(x, y, 1) for (x, y) in corners_image2]
-
-    # Draw matches between two images
-    output_img = cv2.drawMatches(img1, keypoints_image1, img2, keypoints_image2, matches, None,
-                                 flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-    return output_img
