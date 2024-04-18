@@ -99,7 +99,7 @@ def template_matching_sqdiff(original_img, template_img):
 
     for y in range(original_h - template_h + 1):
         for x in range(original_w - template_w + 1):
-            patch = original_img[y:y+template_h, x:x+template_w]
+            patch = original_img[y:y + template_h, x:x + template_w]
             ssd = np.sum((patch - template_img) ** 2)
             if ssd < min_ssd:
                 min_ssd = ssd
@@ -108,7 +108,7 @@ def template_matching_sqdiff(original_img, template_img):
     return min_loc
 
 
-def template_matching_ccorr_normed(original_img, template_img):
+def template_matching_ncc(original_img, template_img):
     """
     Match a template image to an original image using Normalized Cross-Correlation (NCC).
 
@@ -123,18 +123,32 @@ def template_matching_ccorr_normed(original_img, template_img):
     original_h, original_w = original_img.shape[:2]
     template_h, template_w = template_img.shape[:2]
 
-    # Calculate NCC for each possible position of the template within the original image
-    max_ncc = -float('inf')
+    # Calculate mean and standard deviation of template image
+    template_mean = np.mean(template_img)
+    template_std = np.std(template_img)
+
+    # Initialize variables for max NCC and corresponding location
+    max_ncc = -np.inf
     max_loc = (0, 0)
 
+    # Slide the template over the original image and calculate NCC
     for y in range(original_h - template_h + 1):
         for x in range(original_w - template_w + 1):
-            patch = original_img[y:y+template_h, x:x+template_w]
-            ncc = np.sum(patch * template_img) / (np.sqrt(np.sum(patch ** 2)) * np.sqrt(np.sum(template_img ** 2))
-                                                  + 1e-6)  # Add small epsilon to avoid division by zero
-            if ncc > max_ncc:
-                max_ncc = ncc
-                max_loc = (x, y)
+            patch = original_img[y:y + template_h, x:x + template_w]
+
+            # Calculate mean and standard deviation of patch
+            patch_mean = np.mean(patch)
+            patch_std = np.std(patch)
+
+            if patch_std > 0:
+                # Calculate NCC between patch and template
+                ncc = np.sum((patch - patch_mean) * (template_img - template_mean)) / (
+                            patch_std * template_std * np.prod(template_img.shape))
+
+                # Update max NCC and corresponding location if current NCC is higher
+                if ncc > max_ncc:
+                    max_ncc = ncc
+                    max_loc = (x, y)
 
     return max_loc
 
@@ -156,7 +170,7 @@ def template_matching_and_draw_roi(original_img, template_img, method='SSD'):
         top_left = template_matching_sqdiff(original_img, template_img)
         bottom_right = (top_left[0] + template_img.shape[1], top_left[1] + template_img.shape[0])
     elif method == 'NCC':
-        top_left = template_matching_ccorr_normed(original_img, template_img)
+        top_left = template_matching_ncc(original_img, template_img)
         bottom_right = (top_left[0] + template_img.shape[1], top_left[1] + template_img.shape[0])
     else:
         sift_original = siftapply(original_img)
@@ -193,7 +207,6 @@ def template_matching_and_draw_roi(original_img, template_img, method='SSD'):
     cv2.rectangle(original_img, top_left, bottom_right, (0, 255, 0), 2)
 
     return original_img
-
 
 
 def draw_matches(img1, keypoints_image1, img2, keypoints_image2, matches):
