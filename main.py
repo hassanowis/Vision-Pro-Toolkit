@@ -45,6 +45,7 @@ from PIL import Image, ImageDraw
 import feature_extraction
 from sift import siftapply
 import time
+from segmentation import RGB_to_LUV
 
 # from skimage.filters import sobel
 from scipy.interpolate import RectBivariateSpline
@@ -1615,6 +1616,10 @@ class MainApp(QMainWindow, FORM_CLASS):
                                                      flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
         self.display_image(self.image['after_sift'], self.sift_label)
+        b,g,r = cv2.split(self.image['sift'])
+        img = cv2.merge([r,g,b])
+        
+
 
 
 def main():
