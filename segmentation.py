@@ -33,3 +33,44 @@ def RGB_to_LUV(img):
     img_LUV = img_LUV.astype(np.uint8)
 
     return img_LUV
+
+import numpy as np
+
+def kmeans_segmentation(image, k, max_iterations=100, threshold=1e-4):
+    # Convert the image into a numpy array
+    img = np.array(image)
+    
+    # Reshape the numpy array into a 2D array
+    img_2d = img.reshape(-1, img.shape[2])
+    
+    # Initialize k centroids randomly
+    centroids_idx = np.random.choice(img_2d.shape[0], k, replace=False)
+    centroids = img_2d[centroids_idx]
+    
+    # Assign each pixel to the closest centroid
+    labels = np.argmin(np.linalg.norm(img_2d[:, None] - centroids, axis=2), axis=1)
+    
+    # Repeat the following steps until convergence
+    for _ in range(max_iterations):
+        new_labels = np.argmin(np.linalg.norm(img_2d[:, None] - centroids, axis=2), axis=1)
+        if np.array_equal(new_labels, labels):
+            break
+        
+        # Update centroids
+        for i in range(k):
+            centroids[i] = np.mean(img_2d[new_labels == i], axis=0)
+        
+        # Check convergence
+        if np.sum(np.abs(centroids - np.array([np.mean(img_2d[new_labels == i], axis=0) for i in range(k)]))) < threshold:
+            break
+        
+        labels = new_labels
+    
+    
+    # Reshape the labels back to the original image shape
+    labels = labels.reshape(img.shape[0], img.shape[1])
+    
+    return labels.astype(np.int8)
+
+
+

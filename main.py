@@ -45,7 +45,7 @@ from PIL import Image, ImageDraw
 import feature_extraction
 from sift import siftapply
 import time
-from segmentation import RGB_to_LUV
+from segmentation import RGB_to_LUV, kmeans_segmentation
 
 # from skimage.filters import sobel
 from scipy.interpolate import RectBivariateSpline
@@ -1608,16 +1608,18 @@ class MainApp(QMainWindow, FORM_CLASS):
 
 
     def apply_sift(self):
-        grey_scale_image = cv2.cvtColor(self.image['sift'], cv2.COLOR_BGR2GRAY)
-        sift = siftapply(grey_scale_image)
-        keypoint = sift.return_keypoints()
-        descriptor = sift.return_descriptors()
-        self.image['after_sift'] = cv2.drawKeypoints(self.image['sift'], keypoint, None,
-                                                     flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+        # grey_scale_image = cv2.cvtColor(self.image['sift'], cv2.COLOR_BGR2GRAY)
+        # sift = siftapply(grey_scale_image)
+        # keypoint = sift.return_keypoints()
+        # descriptor = sift.return_descriptors()
+        # self.image['after_sift'] = cv2.drawKeypoints(self.image['sift'], keypoint, None,
+        #                                              flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
-        self.display_image(self.image['after_sift'], self.sift_label)
-        b,g,r = cv2.split(self.image['sift'])
-        img = cv2.merge([r,g,b])
+        # self.display_image(self.image['after_sift'], self.sift_label)
+        # b,g,r = cv2.split(self.image['sift'])
+        # img = cv2.merge([r,g,b])
+        result = kmeans_segmentation(self.image['sift'], 4)
+        self.display_image(result, self.sift_label)
         
 
 
