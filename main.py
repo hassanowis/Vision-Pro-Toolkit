@@ -46,7 +46,7 @@ import feature_extraction
 from sift import siftapply
 import time
 from segmentation import RGB_to_LUV, kmeans_segmentation
-
+import agglomerative
 # from skimage.filters import sobel
 from scipy.interpolate import RectBivariateSpline
 
@@ -87,6 +87,8 @@ class MainApp(QMainWindow, FORM_CLASS):
             "image_before_segmentation": None,
             "image_before_segmentation_pixmap": None,
             "segmented_image": None,
+            "image_before_agglomerative": None,
+            "segmented_image_2": None,
         }
         self.hide_visibility("noise")
         self.hide_visibility("filter")
@@ -146,6 +148,9 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.image_before_segmentation.mouseDoubleClickEvent = lambda event: self.handle_mouse(event,
                                                                                                label=self.image_before_segmentation,
                                                                                                type='image_before_segmentation')
+        self.image_before_agglomerative.mouseDoubleClickEvent = lambda event: self.handle_mouse(event,
+                                                                                               label=self.image_before_agglomerative,
+                                                                                               type='image_before_agglomerative')
         self.match_images_btn.clicked.connect(self.match_images)
         self.apply_sift_btn.clicked.connect(self.apply_sift)
         self.apply_segmentation_btn.clicked.connect(self.apply_segmentation)
@@ -161,6 +166,9 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.th_percentage_slider.valueChanged.connect(self.slider_changed)
         self.window_size_slider.valueChanged.connect(self.slider_changed)
         self.segmentation_threshold_slider.valueChanged.connect(self.slider_changed)
+        self.num_final_cluster_slider.valueChanged.connect(self.slider_changed)
+        self.num_intial_cluster_slider.valueChanged.connect(self.slider_changed)
+        self.apply_agglomerative_btn.clicked.connect(self.apply_agglomerative_clustering)
 
     # Function to handle mouse events
     def handle_mouse(self, event, label, type='original'):
@@ -263,7 +271,7 @@ class MainApp(QMainWindow, FORM_CLASS):
                 # resize image to fit the label before storing it
                 image = cv2.imread(file_paths[0])
 
-                if type == 'original' or type == 'before_contour' or type == 'image_before_segmentation':
+                if type == 'original' or type == 'before_contour' or type == 'image_before_segmentation' or type == 'image_before_agglomerative':
                     image = cv2.resize(image, (label.width(), label.height()))
                 # clear the dictionary
                 self.clear_dict()
@@ -1561,6 +1569,8 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.window_size_slider_lbl.setText(f"Window Size: {self.window_size_slider.value()}")
         self.segmentation_threshold_slider_lbl.setText(
             f"Segmentation Threshold : {self.segmentation_threshold_slider.value()}")
+        self.num_intial_cluster_lbl.setText(f"Number of Initial Clusters : {self.num_intial_cluster_slider.value()}")
+        self.num_final_cluster_lbl.setText(f"Number of Final Clusters : {self.num_final_cluster_slider.value()}")
 
     def draw_corners_eigenvalues(self):
         """
@@ -1717,6 +1727,16 @@ class MainApp(QMainWindow, FORM_CLASS):
             # self.display_image(result, self.segmented_image)
 
         return region
+
+    def apply_agglomerative_clustering(self):
+
+        image = self.image['image_before_agglomerative']
+        num_inital_clusters = self.num_intial_cluster_slider.value()
+        num_final_clusters = self.num_final_cluster_slider.value()
+
+        self.image['segmented_image_2'] = agglomerative.apply_agglomerative_clustering(image, num_final_clusters, num_inital_clusters)
+
+        self.display_image(self.image['segmented_image_2'], self.segmented_image_2)
 
     def apply_sift(self):
         # grey_scale_image = cv2.cvtColor(self.image['sift'], cv2.COLOR_BGR2GRAY)
