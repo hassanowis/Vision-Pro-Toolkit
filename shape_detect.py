@@ -27,6 +27,7 @@ class shapedetection:
         diag = rows - diagonal
         theta = cols        
         return diag, theta
+
     def hough_circle_detection(self, min_radius=60, max_radius=100):
         edges_points = np.nonzero(self.edged_image)
         h, w = self.edged_image.shape
