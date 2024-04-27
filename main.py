@@ -1,7 +1,7 @@
 from os import path
 import sys
 from PyQt5.QtWidgets import QApplication, QLabel
-from PyQt5.QtGui import QPixmap, QImage
+from PyQt5.QtGui import QPixmap, QImage, QPainter
 import cv2
 from PyQt5.QtCore import Qt
 import numpy as np
@@ -84,6 +84,9 @@ class MainApp(QMainWindow, FORM_CLASS):
             "image_to_be_matched": None,
             "sift": None,
             "after_sift": None,
+            "image_before_segmentation": None,
+            "image_before_segmentation_pixmap": None,
+            "segmented_image": None,
         }
         self.hide_visibility("noise")
         self.hide_visibility("filter")
@@ -97,6 +100,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.max_lbl.setVisible(False)
         self.spinBox_min.setVisible(False)
         self.spinBox_max.setVisible(False)
+        self.segmentation_points = None
 
     # Function to handle button signals and initialize the application
     def handle_buttons(self):
@@ -131,16 +135,20 @@ class MainApp(QMainWindow, FORM_CLASS):
                                                                                          label=self.image_before_harris,
                                                                                          type='feature_detection_1')
         self.image_before_sift.mouseDoubleClickEvent = lambda event: self.handle_mouse(event,
-                                                                                label=self.image_before_sift,
-                                                                                type='sift')
+                                                                                       label=self.image_before_sift,
+                                                                                       type='sift')
         self.image_to_match.mouseDoubleClickEvent = lambda event: self.handle_mouse(event,
                                                                                     label=self.image_to_match,
                                                                                     type='image_to_match')
         self.image_to_be_matched.mouseDoubleClickEvent = lambda event: self.handle_mouse(event,
                                                                                          label=self.image_to_be_matched,
                                                                                          type='image_to_be_matched')
+        self.image_before_segmentation.mouseDoubleClickEvent = lambda event: self.handle_mouse(event,
+                                                                                               label=self.image_before_segmentation,
+                                                                                               type='image_before_segmentation')
         self.match_images_btn.clicked.connect(self.match_images)
         self.apply_sift_btn.clicked.connect(self.apply_sift)
+        self.apply_segmentation_btn.clicked.connect(self.apply_segmentation)
         self.feature_detection_apply_btn.clicked.connect(self.apply_feature_detection)
         self.MIX_btn.clicked.connect(self.mix_images)
         self.shapedetect_btn.clicked.connect(self.detect_shape)
@@ -152,6 +160,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.mix2_slider.valueChanged.connect(self.plot_frequency_filter_2)
         self.th_percentage_slider.valueChanged.connect(self.slider_changed)
         self.window_size_slider.valueChanged.connect(self.slider_changed)
+        self.segmentation_threshold_slider.valueChanged.connect(self.slider_changed)
 
     # Function to handle mouse events
     def handle_mouse(self, event, label, type='original'):
@@ -165,6 +174,30 @@ class MainApp(QMainWindow, FORM_CLASS):
         """
         if event.button() == Qt.LeftButton:
             self.load_image(label, type)
+
+        if type == 'image_before_segmentation':
+            if event.button() == Qt.RightButton:
+                # Select the clicked pixel
+                x = event.pos().x()
+                y = event.pos().y()
+                self.segmentation_points = (x, y)
+
+                # If this is the first time drawing, keep a copy of the original pixmap
+                if self.image["image_before_segmentation_pixmap"] is None:
+                    self.image["image_before_segmentation_pixmap"] = label.pixmap().copy()
+
+                # Create a new pixmap from the original pixmap (not the one with the drawn "o")
+                pixmap = self.image["image_before_segmentation_pixmap"].copy()
+
+                # Create a painter for the pixmap
+                painter = QPainter(pixmap)
+                painter.setPen(Qt.red)
+                painter.drawText(x, y, "o")
+                painter.end()
+
+                # Update the label with the new pixmap
+                label.setPixmap(pixmap)
+                label.update()
 
     # Function to hide or show widgets related to noise and filter parameters
     def hide_visibility(self, prefix, show_spacers=False, show_labels=False, show_text=False, k=3):
@@ -229,12 +262,14 @@ class MainApp(QMainWindow, FORM_CLASS):
             if file_paths:
                 # resize image to fit the label before storing it
                 image = cv2.imread(file_paths[0])
-                # image = cv2.resize(image, (label.width(), label.height()))
+
+                if type == 'original' or type == 'before_contour' or type == 'image_before_segmentation':
+                    image = cv2.resize(image, (label.width(), label.height()))
                 # clear the dictionary
                 self.clear_dict()
+
                 self.image[type] = image
                 # clear all labels
-                label.clear()
                 label.clear()
                 if type == 'original':
                     self.gray_scale()
@@ -245,6 +280,7 @@ class MainApp(QMainWindow, FORM_CLASS):
                     self.plot_gray_distribution_curve(self.image['original'], self.distribution_curve_lbl_2,
                                                       "Original Image Distribution Curve")
                 else:
+                    label.clear()
                     self.display_image(self.image[type], label)
 
     # Function to display an image on a QLabel
@@ -1523,6 +1559,8 @@ class MainApp(QMainWindow, FORM_CLASS):
         """
         self.th_percentage_slider_lbl.setText(f"Threshold Percentage: {self.th_percentage_slider.value() / 100}%")
         self.window_size_slider_lbl.setText(f"Window Size: {self.window_size_slider.value()}")
+        self.segmentation_threshold_slider_lbl.setText(
+            f"Segmentation Threshold : {self.segmentation_threshold_slider.value()}")
 
     def draw_corners_eigenvalues(self):
         """
@@ -1547,7 +1585,8 @@ class MainApp(QMainWindow, FORM_CLASS):
         img = self.image['feature_detection_1']
         window_size = int(self.window_size_slider.value())
         th_percentage = float(self.th_percentage_slider.value() / 100)
-        corners = feature_extraction.lambda_minus_corner_detection(img, window_size, th_percentage)  # window_size = 5,th_percentage = 0.01
+        corners = feature_extraction.lambda_minus_corner_detection(img, window_size,
+                                                                   th_percentage)  # window_size = 5,th_percentage = 0.01
         # Draw corners on the original image
         img_with_corners = img.copy()
         for corner in corners:
@@ -1593,19 +1632,91 @@ class MainApp(QMainWindow, FORM_CLASS):
         # Match features
         if self.ncc_radio_button.isChecked():
             result_image = feature_extraction.template_matching_and_draw_roi(
-            Original_image, temp_image, method='NCC')
+                Original_image, temp_image, method='NCC')
         elif self.ssd_radio_button.isChecked():
             result_image = feature_extraction.template_matching_and_draw_roi(
-            Original_image, temp_image, method='SSD')
+                Original_image, temp_image, method='SSD')
         else:
             result_image = feature_extraction.template_matching_and_draw_roi(
-            Original_image, temp_image, method='SIFT')
+                Original_image, temp_image, method='SIFT')
 
         self.match_progressBar.setValue(100)
         # Display the matched image
         self.display_image(result_image, self.matched_image)
 
+    def apply_segmentation(self):
+        """
+        Apply region growing segmentation to the input image.
 
+        Returns:
+            None
+        """
+        # Get the threshold value from the slider
+        threshold = self.segmentation_threshold_slider.value()
+
+        # Perform region growing segmentation
+        gray_image = cv2.cvtColor(self.image['image_before_segmentation'], cv2.COLOR_BGR2GRAY)
+        segmented_region = self.region_growing_segmentation(gray_image,
+                                                           self.segmentation_points,
+                                                           threshold)
+
+        # Map the segmented region on the original image
+        original_image = self.image['image_before_segmentation'].copy()
+        original_image[segmented_region > 0] = [0, 0, 255]  # Red color for the segmented region
+
+        # Display the segmented image
+        self.display_image(original_image, self.segmented_image)
+
+    def region_growing_segmentation(self, image, seed, threshold):
+        # Initialize visited matrix and region
+        visited = np.zeros_like(image, dtype=np.uint8)
+        region = np.zeros_like(image, dtype=np.uint8)
+
+        # Get image dimensions
+        height, width = image.shape[:2]
+
+        # Define neighbors offsets (8-connectivity)
+        offsets = [(-1, -1), (-1, 0), (-1, 1),
+                   (0, -1),          (0, 1),
+                   (1, -1), (1, 0), (1, 1)]
+
+        # Create queue for region growing
+        queue = [seed]
+
+        # Convert images to np.float32
+        image = np.float32(image)
+
+        while queue:
+            # Get current pixel
+            current_pixel = queue.pop(0)
+
+            # Check if current_pixel is not None
+            if current_pixel is not None:
+                x, y = current_pixel
+                not_visited_condition = visited[y, x] == 0
+                # Check if pixel is within image bounds and not visited
+                if 0 <= x < width and 0 <= y < height and not_visited_condition:
+                    # Mark pixel as visited
+                    visited[y, x] = 1
+                    # Check if pixel intensity meets similarity criteria
+                    if abs(image[y, x] - image[seed[1], seed[0]]) <= threshold:
+                        # Add pixel to region
+                        region[y, x] = image[y, x]
+
+                        # Add neighbors to queue
+                        for dx, dy in offsets:
+                            new_x, new_y = x + dx, y + dy
+                            if 0 <= new_x < width and 0 <= new_y < height:  # Ensure neighbor is within image bounds
+                                queue.append((new_x, new_y))
+
+            # Check if region size exceeds limit
+            if np.count_nonzero(region) > 350 * 350:
+                break
+
+            # result = cv2.bitwise_and(image, image, mask=region)
+            # self.display_image(result, self.segmented_image)
+
+        return region
 
     def apply_sift(self):
         # grey_scale_image = cv2.cvtColor(self.image['sift'], cv2.COLOR_BGR2GRAY)
@@ -1620,8 +1731,6 @@ class MainApp(QMainWindow, FORM_CLASS):
         # img = cv2.merge([r,g,b])
         result = kmeans_segmentation(self.image['sift'], 4)
         self.display_image(result, self.sift_label)
-        
-
 
 
 def main():
