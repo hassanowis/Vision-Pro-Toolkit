@@ -1,11 +1,13 @@
 import numpy as np
+from scipy.spatial import KDTree
+import cv2
 
 def RGB_to_LUV(img):
     # Rescale pixel values to range [0, 1]
     img = img / 255.0
 
     # Convert RGB to XYZ
-    r, g, b = img[:, :, 0], img[:, :, 1], img[:, :, 2]
+    r, g, b = img[:, :, 0], img[:, :, 1], img[:, :, 2] # split channels
     x = r * 0.4124564 + g * 0.3575761 + b * 0.1804375
     y = r * 0.2126729 + g * 0.7151522 + b * 0.0721750
     z = r * 0.0193339 + g * 0.1191920 + b * 0.9503041
@@ -19,7 +21,7 @@ def RGB_to_LUV(img):
     u_ref_prime = (4 * x_ref) / (x_ref + 15 * y_ref + 3 * z_ref) #0.19793943
     v_ref_prime = (9 * y_ref) / (x_ref + 15 * y_ref + 3 * z_ref) #0.46831096
 
-    L = np.where(y > 0.008856, 116 * np.power(y / y_ref, 1.0 / 3.0) - 16.0, 903.3 * y)
+    L = np.where(y > 0.008856, 116 * np.power(y / y_ref, 1.0 / 3.0) - 16.0, 903.3 * y) 
     u = 13 * L * (u_prime - u_ref_prime)
     v = 13 * L * (v_prime - v_ref_prime)
 
@@ -34,7 +36,7 @@ def RGB_to_LUV(img):
 
     return img_LUV
 
-import numpy as np
+
 
 def kmeans_segmentation(image, k, max_iterations=100, threshold=1e-4):
     # Convert the image into a numpy array
@@ -74,3 +76,52 @@ def kmeans_segmentation(image, k, max_iterations=100, threshold=1e-4):
 
 
 
+
+def mean_shift(img, window_size=30, criteria=(cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1)):
+    # Reshape the image into a 2D array of pixels
+    img_to_2dArray = img.reshape(-1, 3)
+
+    num_points, _ = img_to_2dArray.shape # Number of points in the image and the number of dimensions(features)
+
+    # Initialize the point considered array
+    point_considered = np.zeros(num_points, dtype=bool)
+    labels = -1 * np.ones(num_points, dtype=int) # Initialize the labels array
+    label_count = 0
+
+    # Use a KD-tree to efficiently find the points within the window
+    tree = KDTree(img_to_2dArray)
+
+    for i in range(num_points):
+        if point_considered[i]: # Skip if the point has already been considered(visited)
+            continue
+
+        Center_point = img_to_2dArray[i] # Initialize the center point as the current point
+        while True:
+            # Find all points within the window centered on the current point
+            # Use query_ball_tree for faster search
+            in_window = tree.query_ball_point(Center_point, r=window_size) # Return an array of indices of points within the window
+
+            # Update the point considered array in one go
+            point_considered[in_window] = True
+
+            # Calculate the mean of the points within the window
+            new_center = np.mean(img_to_2dArray[in_window], axis=0)
+
+            # If the center has converged, assign labels to all points in the window
+            if np.linalg.norm(new_center - Center_point) < criteria[1]:
+                labels[in_window] = label_count
+                label_count += 1
+                break # Break out of the loop only if the center has converged
+
+            Center_point = new_center
+
+    labels = labels.reshape(img.shape[:2]) # Reshape the labels array back to the original image shape
+
+    # Create a new image where each pixel is assigned the color of its cluster centroid
+    new_img = np.zeros_like(img)
+    for i in range(np.max(labels)+1):
+        # Vectorized assignment of cluster centroid color
+        new_img[labels == i] = np.mean(img[labels == i], axis=0) 
+
+    output_image = np.array(new_img, np.uint8)
+    return output_image
