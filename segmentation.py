@@ -60,26 +60,41 @@ def kmeans_segmentation(image, k, max_iterations=100, threshold=1e-4):
     
     # Repeat the following steps until convergence
     for _ in range(max_iterations):
-        new_labels = np.argmin(np.linalg.norm(img_2d[:, None] - centroids, axis=2), axis=1)
-        if np.array_equal(new_labels, labels): #if the new labels are equal to the old labels
-            break
-        
+        # print("iteration")
+
         # Update centroids
         for i in range(k):
-            centroids[i] = np.mean(img_2d[new_labels == i], axis=0)
+            centroids[i] = np.mean(img_2d[labels == i], axis=0) # update the centroid with the mean of the pixels in the cluster
         
+        new_labels = np.argmin(np.linalg.norm(img_2d[:, None] - centroids, axis=2), axis=1) # assign each pixel to the closest new centroid
+
         # Check convergence
-        if np.sum(np.abs(centroids - np.array([np.mean(img_2d[new_labels == i], axis=0) for i in range(k)]))) < threshold:
-            #sum returns the sum of the absolute values of the differences between the new and old centroids
+        if np.sum(np.abs(centroids - np.array([np.mean(img_2d[new_labels == i], axis=0) for i in range(k)]))) < threshold: #check new centroids against old centroids
+            #sum returns the sum of the absolute values of the differences between the new and old centroids for each cluster
+            
+            #centroids : the old centroids
+            #np.array([np.mean(img_2d[new_labels == i], axis=0) for i in range(k)]) : the new centroids
+
             break
         
         labels = new_labels
     
     
-    # Reshape the labels back to the original image shape
-    labels = labels.reshape(img.shape[0], img.shape[1])
-    
-    return labels.astype(np.int8)
+    #assign the color of k segmented points with the dominant color in the cluster
+    # Create an empty array with the same shape as the original image
+    segmented_img = np.zeros(img.shape)
+
+    # Reshape new_labels to match the shape of the original image
+    new_labels = new_labels.reshape(img.shape[0], img.shape[1])
+
+    # Assign each pixel the color of its centroid
+    for i in range(k):
+        segmented_img[new_labels == i] = centroids[i]
+
+    # Make sure to convert the data type to uint8 for proper display
+    segmented_img = segmented_img.astype(np.uint8)
+    return segmented_img
+
 
 
 
@@ -115,7 +130,7 @@ def mean_shift(img, window_size=30, criteria=(cv2.TERM_CRITERIA_EPS + cv2.TERM_C
             new_center = np.mean(img_to_2dArray[in_window], axis=0) #assign the mean of the points in the window as the new center
 
             # If the center has converged, assign labels to all points in the window
-            if np.linalg.norm(new_center - Center_point) < criteria[1]:
+            if np.linalg.norm(new_center - Center_point) < criteria[1]: 
                 labels[in_window] = label_count
                 label_count += 1 #update the label count(class label)
                 break # Break out of the loop only if the center has converged

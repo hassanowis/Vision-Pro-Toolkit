@@ -1739,14 +1739,15 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.display_image(self.image['segmented_image_2'], self.segmented_image_2)
 
     def apply_sift(self):
-        grey_scale_image = cv2.cvtColor(self.image['sift'], cv2.COLOR_BGR2GRAY)
-        sift = siftapply(grey_scale_image)
-        keypoint = sift.return_keypoints()
-        descriptor = sift.return_descriptors()
-        self.image['after_sift'] = cv2.drawKeypoints(self.image['sift'], keypoint, None,
-                                                     flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    #     grey_scale_image = cv2.cvtColor(self.image['sift'], cv2.COLOR_BGR2GRAY)
+    #     sift = siftapply(grey_scale_image)
+    #     keypoint = sift.return_keypoints()
+    #     descriptor = sift.return_descriptors()
+    #     self.image['after_sift'] = cv2.drawKeypoints(self.image['sift'], keypoint, None,
+    #                                                  flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
-        self.display_image(self.image['after_sift'], self.sift_label)
+        img = kmeans_segmentation(self.image['sift'], 3)
+        self.display_image(img, self.sift_label)
 
 
 def main():
