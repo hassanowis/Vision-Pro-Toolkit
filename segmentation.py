@@ -50,12 +50,18 @@ def kmeans_segmentation(image, k, max_iterations=100, threshold=1e-4):
     centroids = img_2d[centroids_idx]
     
     # Assign each pixel to the closest centroid
-    labels = np.argmin(np.linalg.norm(img_2d[:, None] - centroids, axis=2), axis=1)
+    labels = np.argmin(np.linalg.norm(img_2d[:, None] - centroids, axis=2), axis=1) 
+    #linalg norm calculates the Euclidean distance between each point in img_2d and each centroid.
+    #results in a 2D array of shape (img_2d.shape[0], k)
+    #argmin returns the index of the closest centroid for each point in img_2d
+    #labels is a 1D array that contains the index of the closest centroid for each point in img_2d
+    
+    # Check convergence
     
     # Repeat the following steps until convergence
     for _ in range(max_iterations):
         new_labels = np.argmin(np.linalg.norm(img_2d[:, None] - centroids, axis=2), axis=1)
-        if np.array_equal(new_labels, labels):
+        if np.array_equal(new_labels, labels): #if the new labels are equal to the old labels
             break
         
         # Update centroids
@@ -64,6 +70,7 @@ def kmeans_segmentation(image, k, max_iterations=100, threshold=1e-4):
         
         # Check convergence
         if np.sum(np.abs(centroids - np.array([np.mean(img_2d[new_labels == i], axis=0) for i in range(k)]))) < threshold:
+            #sum returns the sum of the absolute values of the differences between the new and old centroids
             break
         
         labels = new_labels
@@ -102,26 +109,27 @@ def mean_shift(img, window_size=30, criteria=(cv2.TERM_CRITERIA_EPS + cv2.TERM_C
             in_window = tree.query_ball_point(Center_point, r=window_size) # Return an array of indices of points within the window
 
             # Update the point considered array in one go
-            point_considered[in_window] = True
+            point_considered[in_window] = True #mark the points in the window as visited for faster search
 
             # Calculate the mean of the points within the window
-            new_center = np.mean(img_to_2dArray[in_window], axis=0)
+            new_center = np.mean(img_to_2dArray[in_window], axis=0) #assign the mean of the points in the window as the new center
 
             # If the center has converged, assign labels to all points in the window
             if np.linalg.norm(new_center - Center_point) < criteria[1]:
                 labels[in_window] = label_count
-                label_count += 1
+                label_count += 1 #update the label count(class label)
                 break # Break out of the loop only if the center has converged
 
-            Center_point = new_center
+            Center_point = new_center # Update the center point to the new center if the center has not converged
 
-    labels = labels.reshape(img.shape[:2]) # Reshape the labels array back to the original image shape
+    # Reshape the labels array back to the original image shape
+    labels = labels.reshape(img.shape[:2]) 
 
     # Create a new image where each pixel is assigned the color of its cluster centroid
     new_img = np.zeros_like(img)
     for i in range(np.max(labels)+1):
         # Vectorized assignment of cluster centroid color
-        new_img[labels == i] = np.mean(img[labels == i], axis=0) 
+        new_img[labels == i] = np.mean(img[labels == i], axis=0) # Calculate the mean of the points in the cluster
 
     output_image = np.array(new_img, np.uint8)
     return output_image
