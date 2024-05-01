@@ -1825,14 +1825,14 @@ class MainApp(QMainWindow, FORM_CLASS):
 
         if self.threshold_combo_box_3.currentText() == 'Local':
             if self.threshold_combo_box_2.currentText() == 'Optimal':
-                self.image['after_threshold'] = local_thresholding(self.image['threshold'],40,optimal_thresholding)
+                self.image['after_threshold'] = local_thresholding(self.image['threshold'],5,optimal_thresholding)
                 self.display_image(self.image['after_threshold'], self.image_after_threshold)
             if self.threshold_combo_box_2.currentText() == 'Otsu':
                 grey_image = cv2.cvtColor(self.image['threshold'], cv2.COLOR_BGR2GRAY)
-                self.image['after_threshold'] = local_thresholding(grey_image,4,otsu_threshold)
+                self.image['after_threshold'] = local_thresholding(grey_image,5,otsu_threshold)
                 self.display_image(self.image['after_threshold'], self.image_after_threshold)
             if self.threshold_combo_box_2.currentText() == 'Spectral':
-                self.image['after_threshold'] = local_thresholding(self.image['threshold'],4,spectral_thresholding)
+                self.image['after_threshold'] = local_thresholding(self.image['threshold'],5,spectral_thresholding)
                 self.display_image(self.image['after_threshold'], self.image_after_threshold)
 
 

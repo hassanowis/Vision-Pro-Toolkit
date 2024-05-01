@@ -67,94 +67,7 @@ def compute_optimal_threshold(img: np.ndarray, threshold):
     optimal_threshold = (background_mean + object_mean) / 2
     return optimal_threshold
 
-# Spectral Thresholding
-def spectral_thresholding(source: np.ndarray):
-    """
-    Apply spectral thresholding to determine optimal threshold values.
 
-    Parameters:
-        source (np.ndarray): Input grayscale image.
-    
-    Returns:
-        np.ndarray: Image with double thresholding applied.
-    """
-    # Convert to grayscale if necessary
-    if len(source.shape) > 2:
-        source = cv2.cvtColor(source, cv2.COLOR_RGB2GRAY)
-
-    # Compute histogram and probability distribution function (PDF)
-    hist_values = np.histogram(source.ravel(), 256)[0]
-    pdf = hist_values / float(source.size)
-
-    # Compute cumulative distribution function (CDF)
-    cdf = np.cumsum(pdf)
-    
-    # Find optimal high and low thresholds
-    optimal_low = 1
-    optimal_high = 1
-    max_variance = 0
-    global_range = np.arange(0, 256)
-    global_mean = np.sum(global_range * pdf)
-
-    for low_threshold in range(1, 254):
-        for high_threshold in range(low_threshold + 1, 255):
-            try:
-                back_mean = np.sum(global_range[:low_threshold] * pdf[:low_threshold])
-                low_mean = np.sum(global_range[low_threshold:high_threshold] * pdf[low_threshold:high_threshold])
-                high_mean = np.sum(global_range[high_threshold:] * pdf[high_threshold:])
-                
-                variance = (
-                    cdf[low_threshold] * (back_mean - global_mean) ** 2 +
-                    cdf[high_threshold] * (high_mean - global_mean) ** 2
-                )
-                
-                if variance > max_variance:
-                    max_variance = variance
-                    optimal_low = low_threshold
-                    optimal_high = high_threshold
-            except RuntimeWarning:
-                continue
-
-    return double_threshold(source, optimal_low, optimal_high, 128, False)
-
-# def otsu_threshold(image):
-#     """
-#     Apply Otsu's thresholding to a given grayscale image without using OpenCV's built-in functions.
-
-#     Parameters:
-#         image (np.ndarray): The input grayscale image.
-
-#     Returns:
-#         np.ndarray: The binary image obtained after applying Otsu's thresholding.
-#         float: The optimal threshold calculated by Otsu's method.
-#     """
-#     # Ensure the image is grayscale
-#     if len(image.shape) > 2:
-#         raise ValueError("Otsu's thresholding requires a grayscale image.")
-
-#     # Compute the histogram of the grayscale image
-#     hist, _ = np.histogram(image, bins=256, range=(0, 256))
-    
-#     # Normalize the histogram to create a probability distribution
-#     hist_norm = hist / float(np.sum(hist))
-    
-#     # Compute the cumulative sum and cumulative mean of the normalized histogram
-#     cum_sum = np.cumsum(hist_norm)  # Cumulative sum
-#     cum_mean = np.cumsum(hist_norm * np.arange(256))  # Cumulative mean
-    
-#     # Compute the global mean of the image
-#     global_mean = cum_mean[-1]  # Last value of cum_mean
-    
-#     # Compute the between-class variance for each threshold
-#     between_class_variance = (global_mean * cum_sum - cum_mean) ** 2 / (cum_sum * (1 - cum_sum))
-    
-#     # Find the threshold that maximizes the between-class variance
-#     optimal_threshold = np.argmax(between_class_variance)
-    
-#     # Apply the calculated threshold to create a binary image
-#     binary_image = (image >= optimal_threshold).astype(np.uint8) * 255
-    
-#     return binary_image, optimal_threshold
 def otsu_threshold(image):
     """
     Apply Otsu's thresholding to a given grayscale image without using OpenCV's built-in functions.
@@ -198,40 +111,69 @@ def otsu_threshold(image):
     
     return binary_image, optimal_threshold
 
-# Local Thresholding
-# def local_thresholding(image: np.ndarray, regions, thresholding_function):
-#     """
-#     Apply a thresholding method locally by dividing the image into regions.
 
-#     Parameters:
-#         image (np.ndarray): Input grayscale image.
-#         regions (int): Number of regions to divide the image into.
-#         thresholding_function (callable): Function used for thresholding each region.
+def spectral_thresholding(img):
+    """
+    Apply spectral thresholding to determine optimal low and high thresholds for double thresholding.
+
+    Parameters:
+        img (np.ndarray): Input image, can be grayscale or RGB.
     
-#     Returns:
-#         np.ndarray: The locally thresholded image.
-#     """
-#     src = np.copy(image)
+    Returns:
+        np.ndarray: Binary image after double thresholding.
+    """
+    # Convert to grayscale if needed
+    if len(img.shape) > 2 and img.shape[2] == 3:
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
-#     if len(src.shape) > 2:
-#         src = cv2.cvtColor(src, cv2.COLOR_RGB2GRAY)
-
-#     ymax, xmax = src.shape
-#     result = np.zeros_like(src)
-
-#     # Calculate step sizes for regions
-#     y_step = ymax // regions
-#     x_step = xmax // regions
+    # Compute the histogram and the global mean
+    hist, _ = np.histogram(img.flatten(), 256, [0, 256])
+    global_mean = np.sum(hist * np.arange(256)) / img.size
     
-#     # Apply the thresholding function to each region
-#     for y in range(0, ymax, y_step):
-#         for x in range(0, xmax, x_step):
-#             end_y = min(y + y_step, ymax)
-#             end_x = min(x + x_step, xmax)
-#             region = src[y:end_y, x:end_x]
-#             result[y:end_y, x:end_x] = thresholding_function(region)
+    # Initialize variables for optimal thresholds and max variance
+    optimal_high_threshold = 0
+    optimal_low_threshold = 0
+    max_variance = 0
+    
+    # Iterate through potential high and low thresholds to find the optimal ones
+    for high in range(1, 256):
+        for low in range(1, high):
+            # Calculate class weights and means
+            w0 = np.sum(hist[0:low])
+            if w0 == 0:
+                continue
+            mean0 = np.sum(np.arange(low) * hist[0:low]) / w0
+            
+            w1 = np.sum(hist[low:high])
+            if w1 == 0:
+                continue
+            mean1 = np.sum(np.arange(low, high) * hist[low:high]) / w1
+            
+            w2 = np.sum(hist[high:])
+            if w2 == 0:
+                continue
+            mean2 = np.sum(np.arange(high, 256) * hist[high:]) / w2
+            
+            # Compute the between-class variance
+            variance = (w0 * (mean0 - global_mean) ** 2 +
+                        w1 * (mean1 - global_mean) ** 2 +
+                        w2 * (mean2 - global_mean) ** 2)
+            
+            # Update optimal thresholds if variance is the highest so far
+            if variance > max_variance:
+                max_variance = variance
+                optimal_low_threshold = low
+                optimal_high_threshold = high
+    
+    # Apply double thresholding with the optimal thresholds
+    binary = np.zeros(img.shape, dtype=np.uint8)
+    binary[img < optimal_low_threshold] = 0  # Background
+    binary[(img >= optimal_low_threshold) & (img < optimal_high_threshold)] = 128  # Weak signal
+    binary[img >= optimal_high_threshold] = 255  # Strong signal
+    
+    return binary
 
-#     return result
+
 def local_thresholding(image: np.ndarray, regions, thresholding_function):
     """
     Apply a thresholding method locally by dividing the image into regions.
@@ -276,36 +218,3 @@ def local_thresholding(image: np.ndarray, regions, thresholding_function):
                 result[y:end_y, x:end_x] = 0
 
     return result
-
-# Double Thresholding
-def double_threshold(image: np.ndarray, low_threshold, high_threshold, weak_value=128, is_ratio=True):
-    """
-    Apply double thresholding to an image.
-
-    Parameters:
-        image (np.ndarray): Input grayscale image.
-        low_threshold (float): Low threshold value.
-        high_threshold (float): High threshold value.
-        weak_value (int): Value used for weak edges.
-        is_ratio (bool): If True, thresholds are treated as ratios; otherwise, absolute values.
-    
-    Returns:
-        np.ndarray: Thresholded image with strong and weak edges.
-    """
-    # Calculate actual threshold values
-    high = image.max() * high_threshold if is_ratio else high_threshold
-    low = image.max() * low_threshold if is_ratio else low_threshold
-    
-    # Create an empty image to store the thresholding result
-    thresholded_image = np.zeros_like(image)
-
-    # Find strong and weak edge positions
-    strong = 255
-    strong_pos = (image >= high)
-    weak_pos = ((image < high) & (image >= low))
-    
-    # Apply the strong and weak edges
-    thresholded_image[strong_pos] = strong
-    thresholded_image[weak_pos] = weak_value
-    
-    return thresholded_image

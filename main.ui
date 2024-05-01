@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1353</width>
-    <height>979</height>
+    <height>748</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -2989,7 +2989,7 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
       </widget>
       <widget class="QWidget" name="tab_12">
        <attribute name="title">
-        <string>Page</string>
+        <string>Thresholding</string>
        </attribute>
        <widget class="QPushButton" name="apply_threshold_btn_2">
         <property name="geometry">
@@ -3150,7 +3150,7 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
      <x>0</x>
      <y>0</y>
      <width>1353</width>
-     <height>26</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menufile">
