@@ -182,6 +182,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.th_percentage_slider.valueChanged.connect(self.slider_changed)
         self.window_size_slider.valueChanged.connect(self.slider_changed)
         self.segmentation_threshold_slider.valueChanged.connect(self.slider_changed)
+        self.segmentation_threshold_slider_2.valueChanged.connect(self.slider_changed)
         self.num_final_cluster_slider.valueChanged.connect(self.slider_changed)
         self.num_intial_cluster_slider.valueChanged.connect(self.slider_changed)
         self.apply_agglomerative_btn.clicked.connect(self.apply_agglomerative_clustering)
@@ -1603,6 +1604,9 @@ class MainApp(QMainWindow, FORM_CLASS):
         elif segmentation_technique == 'K-means':
             self.segmentation_threshold_slider_lbl.setText(
                 f"Number of Clusters : {self.segmentation_threshold_slider.value()}")
+            self.segmentation_threshold_slider_lbl_2.setText(
+                f"Number of Clusters : {self.segmentation_threshold_slider_2.value()}")
+            self
         elif segmentation_technique == 'Mean Shift':
             self.segmentation_threshold_slider_lbl.setText(
                 f"Window Size : {self.segmentation_threshold_slider.value()}")

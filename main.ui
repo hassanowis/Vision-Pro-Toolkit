@@ -550,7 +550,7 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
 }</string>
       </property>
       <property name="currentIndex">
-       <number>7</number>
+       <number>8</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -2326,7 +2326,7 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
                 <item>
                  <widget class="QLabel" name="segmentation_threshold_slider_lbl">
                   <property name="text">
-                   <string>Segmentation Threshold : 1</string>
+                   <string>Number of Clusters : </string>
                   </property>
                  </widget>
                 </item>
@@ -3157,7 +3157,7 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
      <x>0</x>
      <y>0</y>
      <width>1353</width>
-     <height>37</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menufile">
