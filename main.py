@@ -92,6 +92,12 @@ class MainApp(QMainWindow, FORM_CLASS):
             "segmented_image_2": None,
             "threshold": None,
             "after_threshold": None,
+            "RGB": None,
+            "LUV":None,
+            "before_kmeans":None,
+            "after_kmeans":None,
+            "before_mean_shift":None,
+            "after_mean_shift":None,
         }
         self.hide_visibility("noise")
         self.hide_visibility("filter")
@@ -158,6 +164,9 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.image_before_threshold.mouseDoubleClickEvent = lambda event: self.handle_mouse(event,
                                                                                 label=self.image_before_threshold,
                                                                                 type='threshold')
+        self.rgb_image_lbl.mouseDoubleClickEvent = lambda event: self.handle_mouse(event, label=self.rgb_image_lbl,
+                                                                                    type='RGB')
+        
         self.match_images_btn.clicked.connect(self.match_images)
         self.apply_sift_btn.clicked.connect(self.apply_sift)
         self.apply_segmentation_btn.clicked.connect(self.apply_segmentation)
@@ -177,6 +186,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.num_intial_cluster_slider.valueChanged.connect(self.slider_changed)
         self.apply_agglomerative_btn.clicked.connect(self.apply_agglomerative_clustering)
         self.segmentation_comboBox.currentIndexChanged.connect(self.segmentation_combo_change)
+        self.luv_btn.clicked.connect(self.apply_rgb_to_luv)
 
 
     # Function to handle mouse events
@@ -288,11 +298,10 @@ class MainApp(QMainWindow, FORM_CLASS):
                     if self.segmentation_comboBox.currentText() == 'Region Growing':
                         type = 'image_before_segmentation'
                     elif self.segmentation_comboBox.currentText() == 'Mean Shift':
-                        pass
-                        # type =
+                        type = 'before_mean_shift'
                     elif self.segmentation_comboBox.currentText() == 'K-Means':
-                        pass
-                        # type =
+                        type = 'before_kmeans'
+                        
 
                 self.image[type] = image
                 # clear all labels
@@ -1731,9 +1740,19 @@ class MainApp(QMainWindow, FORM_CLASS):
             self.display_image(original_image, self.segmented_image)
 
         elif self.segmentation_comboBox.currentText() == 'K-means':
-            pass
+            image = self.image['image_before_segmentation']
+            k = self.segmentation_threshold_slider.value()
+            max_iterations = self.segmentation_threshold_slider_2.value()
+
+            self.image['after_kmeans'] = kmeans_segmentation(image, k, max_iterations)
+
+            self.display_image(self.image['after_kmeans'], self.segmented_image)
         elif self.segmentation_comboBox.currentText() == 'Mean Shift':
-            pass
+            image = self.image['image_before_segmentation']
+            window_size = self.segmentation_threshold_slider.value()
+            self.image['after_mean_shift'] = mean_shift(image, window_size)
+            self.display_image(self.image['after_mean_shift'], self.segmented_image)
+            
 
 
     def region_growing_segmentation(self, image, seed, threshold):
@@ -1797,16 +1816,21 @@ class MainApp(QMainWindow, FORM_CLASS):
 
         self.display_image(self.image['segmented_image_2'], self.segmented_image_2)
 
-    def apply_sift(self):
-    #     grey_scale_image = cv2.cvtColor(self.image['sift'], cv2.COLOR_BGR2GRAY)
-    #     sift = siftapply(grey_scale_image)
-    #     keypoint = sift.return_keypoints()
-    #     descriptor = sift.return_descriptors()
-    #     self.image['after_sift'] = cv2.drawKeypoints(self.image['sift'], keypoint, None,
-    #                                                  flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
-        img = kmeans_segmentation(self.image['sift'], 3)
-        self.display_image(img, self.sift_label)
+        
+
+        
+
+    def apply_sift(self):
+        grey_scale_image = cv2.cvtColor(self.image['sift'], cv2.COLOR_BGR2GRAY)
+        sift = siftapply(grey_scale_image)
+        keypoint = sift.return_keypoints()
+        descriptor = sift.return_descriptors()
+        self.image['after_sift'] = cv2.drawKeypoints(self.image['sift'], keypoint, None,
+                                                     flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+
+        
+        self.display_image(self.image["after_sift"], self.sift_label)
 
     def apply_thresholding(self):
         if self.image['threshold'] is None:
@@ -1834,7 +1858,11 @@ class MainApp(QMainWindow, FORM_CLASS):
             if self.threshold_combo_box_2.currentText() == 'Spectral':
                 self.image['after_threshold'] = local_thresholding(self.image['threshold'],5,spectral_thresholding)
                 self.display_image(self.image['after_threshold'], self.image_after_threshold)
-
+    def apply_rgb_to_luv(self):
+        if self.image['RGB'] is None:
+            return
+        self.image['LUV'] = RGB_to_LUV(self.image['RGB'])
+        self.display_image(self.image['LUV'], self.luv_image_lbl)
 
 def main():
     """
