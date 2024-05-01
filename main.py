@@ -102,7 +102,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.max_lbl.setVisible(False)
         self.spinBox_min.setVisible(False)
         self.spinBox_max.setVisible(False)
-        self.segmentation_points = None
+        self.segmentation_point = None
 
     # Function to handle button signals and initialize the application
     def handle_buttons(self):
@@ -169,6 +169,8 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.num_final_cluster_slider.valueChanged.connect(self.slider_changed)
         self.num_intial_cluster_slider.valueChanged.connect(self.slider_changed)
         self.apply_agglomerative_btn.clicked.connect(self.apply_agglomerative_clustering)
+        self.segmentation_comboBox.currentIndexChanged.connect(self.segmentation_combo_change)
+
 
     # Function to handle mouse events
     def handle_mouse(self, event, label, type='original'):
@@ -188,7 +190,7 @@ class MainApp(QMainWindow, FORM_CLASS):
                 # Select the clicked pixel
                 x = event.pos().x()
                 y = event.pos().y()
-                self.segmentation_points = (x, y)
+                self.segmentation_point = (x, y)
 
                 # If this is the first time drawing, keep a copy of the original pixmap
                 if self.image["image_before_segmentation_pixmap"] is None:
@@ -275,6 +277,15 @@ class MainApp(QMainWindow, FORM_CLASS):
                     image = cv2.resize(image, (label.width(), label.height()))
                 # clear the dictionary
                 self.clear_dict()
+                if type == 'image_before_segmentation':
+                    if self.segmentation_comboBox.currentText() == 'Region Growing':
+                        type = 'image_before_segmentation'
+                    elif self.segmentation_comboBox.currentText() == 'Mean Shift':
+                        pass
+                        # type =
+                    elif self.segmentation_comboBox.currentText() == 'K-Means':
+                        pass
+                        # type =
 
                 self.image[type] = image
                 # clear all labels
@@ -1567,10 +1578,18 @@ class MainApp(QMainWindow, FORM_CLASS):
         """
         self.th_percentage_slider_lbl.setText(f"Threshold Percentage: {self.th_percentage_slider.value() / 100}%")
         self.window_size_slider_lbl.setText(f"Window Size: {self.window_size_slider.value()}")
-        self.segmentation_threshold_slider_lbl.setText(
-            f"Segmentation Threshold : {self.segmentation_threshold_slider.value()}")
         self.num_intial_cluster_lbl.setText(f"Number of Initial Clusters : {self.num_intial_cluster_slider.value()}")
         self.num_final_cluster_lbl.setText(f"Number of Final Clusters : {self.num_final_cluster_slider.value()}")
+        segmentation_technique = self.segmentation_comboBox.currentText()
+        if segmentation_technique == 'Region Growing':
+            self.segmentation_threshold_slider_lbl.setText(
+                f"Segmentation Threshold : {self.segmentation_threshold_slider.value()}")
+        elif segmentation_technique == 'K-means':
+            self.segmentation_threshold_slider_lbl.setText(
+                f"Number of Clusters : {self.segmentation_threshold_slider.value()}")
+        elif segmentation_technique == 'Mean Shift':
+            self.segmentation_threshold_slider_lbl.setText(
+                f"Window Size : {self.segmentation_threshold_slider.value()}")
 
     def draw_corners_eigenvalues(self):
         """
@@ -1654,6 +1673,33 @@ class MainApp(QMainWindow, FORM_CLASS):
         # Display the matched image
         self.display_image(result_image, self.matched_image)
 
+    def segmentation_combo_change(self):
+        technique = self.segmentation_comboBox.currentText()
+        if technique == 'Region Growing':
+            self.segmentation_threshold_slider.show()
+            self.segmentation_threshold_slider.setRange(1, 200)
+            self.segmentation_threshold_slider_lbl.show()
+            self.segmentation_threshold_slider_lbl.setText("Segmentation Point: ")
+            self.segmentation_threshold_slider_2.hide()
+            self.segmentation_threshold_slider_lbl_2.hide()
+        elif technique == 'K-means':
+            self.segmentation_threshold_slider.show()
+            self.segmentation_threshold_slider.setRange(1, 20)
+            self.segmentation_threshold_slider_lbl.show()
+            self.segmentation_threshold_slider_lbl.setText("Number of clusters: ")
+            self.segmentation_threshold_slider_2.show()
+            self.segmentation_threshold_slider_2.setRange(10, 100)
+            self.segmentation_threshold_slider_lbl_2.show()
+            self.segmentation_threshold_slider_lbl_2.setText("Maximum Iteration: ")
+
+        elif technique == 'Mean Shift':
+            self.segmentation_threshold_slider.show()
+            self.segmentation_threshold_slider.setRange(5, 50)
+            self.segmentation_threshold_slider_lbl.show()
+            self.segmentation_threshold_slider_lbl.setText("Window size: ")
+            self.segmentation_threshold_slider_2.hide()
+            self.segmentation_threshold_slider_lbl_2.hide()
+
     def apply_segmentation(self):
         """
         Apply region growing segmentation to the input image.
@@ -1661,21 +1707,27 @@ class MainApp(QMainWindow, FORM_CLASS):
         Returns:
             None
         """
-        # Get the threshold value from the slider
-        threshold = self.segmentation_threshold_slider.value()
+        if self.segmentation_comboBox.currentText() == 'Region Growing':
+            # Get the threshold value from the slider
+            threshold = self.segmentation_threshold_slider.value()
 
-        # Perform region growing segmentation
-        gray_image = cv2.cvtColor(self.image['image_before_segmentation'], cv2.COLOR_BGR2GRAY)
-        segmented_region = self.region_growing_segmentation(gray_image,
-                                                           self.segmentation_points,
-                                                           threshold)
+            # Perform region growing segmentation
+            gray_image = cv2.cvtColor(self.image['image_before_segmentation'], cv2.COLOR_BGR2GRAY)
+            segmented_region = self.region_growing_segmentation(gray_image,
+                                                               self.segmentation_point,
+                                                               threshold)
 
-        # Map the segmented region on the original image
-        original_image = self.image['image_before_segmentation'].copy()
-        original_image[segmented_region > 0] = [0, 0, 255]  # Red color for the segmented region
+            # Map the segmented region on the original image
+            original_image = self.image['image_before_segmentation'].copy()
+            original_image[segmented_region > 0] = [0, 0, 255]  # Red color for the segmented region
+            # Display the segmented image
+            self.display_image(original_image, self.segmented_image)
 
-        # Display the segmented image
-        self.display_image(original_image, self.segmented_image)
+        elif self.segmentation_comboBox.currentText() == 'K-means':
+            pass
+        elif self.segmentation_comboBox.currentText() == 'Mean Shift':
+            pass
+
 
     def region_growing_segmentation(self, image, seed, threshold):
         # Initialize visited matrix and region
