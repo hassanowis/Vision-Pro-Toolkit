@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1353</width>
-    <height>897</height>
+    <height>748</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -2275,186 +2275,6 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="tab_12">
-       <attribute name="title">
-        <string>Thresholding</string>
-       </attribute>
-       <layout class="QGridLayout" name="gridLayout_15">
-        <item row="0" column="0">
-         <layout class="QVBoxLayout" name="verticalLayout_41">
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_40">
-            <item>
-             <spacer name="horizontalSpacer_9">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item>
-             <widget class="QLabel" name="image_before_threshold">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>400</width>
-                <height>400</height>
-               </size>
-              </property>
-              <property name="styleSheet">
-               <string notr="true">background-color:lightgrey</string>
-              </property>
-              <property name="text">
-               <string/>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <spacer name="horizontalSpacer_8">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item>
-             <widget class="QLabel" name="image_after_threshold">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>400</width>
-                <height>400</height>
-               </size>
-              </property>
-              <property name="styleSheet">
-               <string notr="true">background-color:lightgrey</string>
-              </property>
-              <property name="text">
-               <string/>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <spacer name="horizontalSpacer_10">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QVBoxLayout" name="verticalLayout_40">
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_41">
-              <item>
-               <widget class="QComboBox" name="threshold_combo_box_2">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>300</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <item>
-                 <property name="text">
-                  <string>Choose type of thresholding</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Optimal</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Spectral</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Otsu</string>
-                 </property>
-                </item>
-               </widget>
-              </item>
-              <item>
-               <widget class="QComboBox" name="threshold_combo_box_3">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>300</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <item>
-                 <property name="text">
-                  <string>Global</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Local</string>
-                 </property>
-                </item>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <widget class="QPushButton" name="apply_threshold_btn_2">
-              <property name="font">
-               <font>
-                <pointsize>12</pointsize>
-               </font>
-              </property>
-              <property name="text">
-               <string>Apply threshold</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </item>
-       </layout>
-      </widget>
       <widget class="QWidget" name="tab_9">
        <attribute name="title">
         <string>Segmentation</string>
@@ -3173,6 +2993,159 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
          </layout>
         </item>
        </layout>
+      </widget>
+      <widget class="QWidget" name="tab_12">
+       <attribute name="title">
+        <string>Thresholding</string>
+       </attribute>
+       <widget class="QPushButton" name="apply_threshold_btn_2">
+        <property name="geometry">
+         <rect>
+          <x>63</x>
+          <y>708</y>
+          <width>1214</width>
+          <height>30</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Apply threshold</string>
+        </property>
+       </widget>
+       <widget class="QComboBox" name="threshold_combo_box_3">
+        <property name="geometry">
+         <rect>
+          <x>830</x>
+          <y>610</y>
+          <width>300</width>
+          <height>20</height>
+         </rect>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>300</width>
+          <height>0</height>
+         </size>
+        </property>
+        <item>
+         <property name="text">
+          <string>Global</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Local</string>
+         </property>
+        </item>
+       </widget>
+       <widget class="QLabel" name="image_before_threshold">
+        <property name="geometry">
+         <rect>
+          <x>210</x>
+          <y>90</y>
+          <width>400</width>
+          <height>400</height>
+         </rect>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>400</width>
+          <height>400</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color:lightgrey</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QLabel" name="image_after_threshold">
+        <property name="geometry">
+         <rect>
+          <x>740</x>
+          <y>90</y>
+          <width>400</width>
+          <height>400</height>
+         </rect>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>400</width>
+          <height>400</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color:lightgrey</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QComboBox" name="threshold_combo_box_2">
+        <property name="geometry">
+         <rect>
+          <x>260</x>
+          <y>610</y>
+          <width>300</width>
+          <height>20</height>
+         </rect>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>300</width>
+          <height>0</height>
+         </size>
+        </property>
+        <item>
+         <property name="text">
+          <string>Choose type of thresholding</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Optimal</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Spectral</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Otsu</string>
+         </property>
+        </item>
+       </widget>
       </widget>
      </widget>
     </item>
