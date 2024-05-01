@@ -291,7 +291,7 @@ class MainApp(QMainWindow, FORM_CLASS):
                 # resize image to fit the label before storing it
                 image = cv2.imread(file_paths[0])
 
-                if type == 'original' or type == 'before_contour'  or type == 'image_before_agglomerative':
+                if type == 'original' or type == 'before_contour' or type == 'image_before_segmentation' or type == 'image_before_agglomerative':
                     image = cv2.resize(image, (label.width(), label.height()))
                 # clear the dictionary
                 self.clear_dict()
