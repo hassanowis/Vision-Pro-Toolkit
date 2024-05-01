@@ -1605,7 +1605,7 @@ class MainApp(QMainWindow, FORM_CLASS):
             self.segmentation_threshold_slider_lbl.setText(
                 f"Number of Clusters : {self.segmentation_threshold_slider.value()}")
             self.segmentation_threshold_slider_lbl_2.setText(
-                f"Number of Clusters : {self.segmentation_threshold_slider_2.value()}")
+                f"Maximum Iterations : {self.segmentation_threshold_slider_2.value()}")
             self
         elif segmentation_technique == 'Mean Shift':
             self.segmentation_threshold_slider_lbl.setText(

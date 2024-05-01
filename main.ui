@@ -550,7 +550,7 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
 }</string>
       </property>
       <property name="currentIndex">
-       <number>8</number>
+       <number>7</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -3157,7 +3157,7 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
      <x>0</x>
      <y>0</y>
      <width>1353</width>
-     <height>26</height>
+     <height>37</height>
     </rect>
    </property>
    <widget class="QMenu" name="menufile">
