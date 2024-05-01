@@ -49,6 +49,7 @@ from segmentation import RGB_to_LUV, kmeans_segmentation,mean_shift
 import agglomerative
 # from skimage.filters import sobel
 from scipy.interpolate import RectBivariateSpline
+from threshold import optimal_thresholding, spectral_thresholding,otsu_threshold,local_thresholding
 
 FORM_CLASS, _ = loadUiType(
     path.join(path.dirname(__file__), "main.ui")
@@ -89,6 +90,8 @@ class MainApp(QMainWindow, FORM_CLASS):
             "segmented_image": None,
             "image_before_agglomerative": None,
             "segmented_image_2": None,
+            "threshold": None,
+            "after_threshold": None,
         }
         self.hide_visibility("noise")
         self.hide_visibility("filter")
@@ -118,6 +121,7 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.threshold_slider.valueChanged.connect(self.threshold_slider_change)
         self.process_btn.clicked.connect(self.process_image)
         self.clear_btn.clicked.connect(self.clear)
+        self.apply_threshold_btn_2.clicked.connect(self.apply_thresholding)
         self.shape_combox.currentIndexChanged.connect(self.show_hide_lbl_spinbox)
         self.equalize_btn.clicked.connect(self.equalize_image)
         self.label_mix_1.mouseDoubleClickEvent = lambda event: self.handle_mouse(event, label=self.label_mix_1,
@@ -151,6 +155,9 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.image_before_agglomerative.mouseDoubleClickEvent = lambda event: self.handle_mouse(event,
                                                                                                label=self.image_before_agglomerative,
                                                                                                type='image_before_agglomerative')
+        self.image_before_threshold.mouseDoubleClickEvent = lambda event: self.handle_mouse(event,
+                                                                                label=self.image_before_threshold,
+                                                                                type='threshold')
         self.match_images_btn.clicked.connect(self.match_images)
         self.apply_sift_btn.clicked.connect(self.apply_sift)
         self.apply_segmentation_btn.clicked.connect(self.apply_segmentation)
@@ -1800,6 +1807,33 @@ class MainApp(QMainWindow, FORM_CLASS):
 
         img = kmeans_segmentation(self.image['sift'], 3)
         self.display_image(img, self.sift_label)
+
+    def apply_thresholding(self):
+        if self.image['threshold'] is None:
+            return
+        if self.threshold_combo_box_3.currentText() == 'Global':
+            if self.threshold_combo_box_2.currentText() == 'Optimal':
+                self.image['after_threshold'] = optimal_thresholding(self.image['threshold'])
+                self.display_image(self.image['after_threshold'], self.image_after_threshold)
+            if self.threshold_combo_box_2.currentText() == 'Otsu':
+                grey_image = cv2.cvtColor(self.image['threshold'], cv2.COLOR_BGR2GRAY)
+                self.image['after_threshold'],_ = otsu_threshold(grey_image)
+                self.display_image(self.image['after_threshold'], self.image_after_threshold)
+            if self.threshold_combo_box_2.currentText() == 'Spectral':
+                self.image['after_threshold'] = spectral_thresholding(self.image['threshold'])
+                self.display_image(self.image['after_threshold'], self.image_after_threshold)
+
+        if self.threshold_combo_box_3.currentText() == 'Local':
+            if self.threshold_combo_box_2.currentText() == 'Optimal':
+                self.image['after_threshold'] = local_thresholding(self.image['threshold'],40,optimal_thresholding)
+                self.display_image(self.image['after_threshold'], self.image_after_threshold)
+            if self.threshold_combo_box_2.currentText() == 'Otsu':
+                grey_image = cv2.cvtColor(self.image['threshold'], cv2.COLOR_BGR2GRAY)
+                self.image['after_threshold'] = local_thresholding(grey_image,4,otsu_threshold)
+                self.display_image(self.image['after_threshold'], self.image_after_threshold)
+            if self.threshold_combo_box_2.currentText() == 'Spectral':
+                self.image['after_threshold'] = local_thresholding(self.image['threshold'],4,spectral_thresholding)
+                self.display_image(self.image['after_threshold'], self.image_after_threshold)
 
 
 def main():
