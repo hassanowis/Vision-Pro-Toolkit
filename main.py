@@ -291,7 +291,7 @@ class MainApp(QMainWindow, FORM_CLASS):
                 # resize image to fit the label before storing it
                 image = cv2.imread(file_paths[0])
 
-                if type == 'original' or type == 'before_contour' or type == 'image_before_segmentation' or type == 'image_before_agglomerative':
+                if type == 'original' or type == 'before_contour'  or type == 'image_before_agglomerative':
                     image = cv2.resize(image, (label.width(), label.height()))
                 # clear the dictionary
                 self.clear_dict()
@@ -1694,6 +1694,9 @@ class MainApp(QMainWindow, FORM_CLASS):
         self.display_image(result_image, self.matched_image)
 
     def segmentation_combo_change(self):
+        # Clear image label
+        self.image_before_segmentation.clear()
+        self.segmented_image.clear()
         technique = self.segmentation_comboBox.currentText()
         if technique == 'Region Growing':
             self.segmentation_threshold_slider.show()
@@ -1744,7 +1747,7 @@ class MainApp(QMainWindow, FORM_CLASS):
             self.display_image(original_image, self.segmented_image)
 
         elif self.segmentation_comboBox.currentText() == 'K-means':
-            image = self.image['image_before_segmentation']
+            image = self.image['before_kmeans']
             k = self.segmentation_threshold_slider.value()
             max_iterations = self.segmentation_threshold_slider_2.value()
 
@@ -1752,7 +1755,7 @@ class MainApp(QMainWindow, FORM_CLASS):
 
             self.display_image(self.image['after_kmeans'], self.segmented_image)
         elif self.segmentation_comboBox.currentText() == 'Mean Shift':
-            image = self.image['image_before_segmentation']
+            image = self.image['before_mean_shift']
             window_size = self.segmentation_threshold_slider.value()
             self.image['after_mean_shift'] = mean_shift(image, window_size)
             self.display_image(self.image['after_mean_shift'], self.segmented_image)
