@@ -295,13 +295,13 @@ class MainApp(QMainWindow, FORM_CLASS):
                     image = cv2.resize(image, (label.width(), label.height()))
                 # clear the dictionary
                 self.clear_dict()
-                if type == 'image_before_segmentation':
-                    if self.segmentation_comboBox.currentText() == 'Region Growing':
-                        type = 'image_before_segmentation'
-                    elif self.segmentation_comboBox.currentText() == 'Mean Shift':
-                        type = 'before_mean_shift'
-                    elif self.segmentation_comboBox.currentText() == 'K-Means':
-                        type = 'before_kmeans'
+                # if type == 'image_before_segmentation':
+                #     if self.segmentation_comboBox.currentText() == 'Region Growing':
+                #         type = 'image_before_segmentation'
+                #     elif self.segmentation_comboBox.currentText() == 'Mean Shift':
+                #         type = 'before_mean_shift'
+                #     elif self.segmentation_comboBox.currentText() == 'K-Means':
+                #         type = 'before_kmeans'
                         
 
                 self.image[type] = image
