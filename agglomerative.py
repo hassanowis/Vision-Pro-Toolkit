@@ -14,20 +14,6 @@ def calculate_distance(x1, x2):
     """
     return np.sqrt(np.sum((x1 - x2) ** 2))
 
-def clusters_distance(cluster1, cluster2):
-    """
-    Calculates the distance between two clusters as the maximum distance between any two points in the clusters.
-
-    Parameters:
-    cluster1, cluster2 : array_like
-        Input arrays representing the points in the two clusters.
-
-    Returns:
-    float
-        The maximum distance between any two points in the clusters.
-    """
-    return max([calculate_distance(point1, point2) for point1 in cluster1 for point2 in cluster2])
-
 def clusters_mean_distance(cluster1, cluster2):
     """
     Calculates the mean distance between two clusters as the Euclidean distance between their centroids.
@@ -110,9 +96,6 @@ def get_clusters(image_clusters, clusters_number, initial_clusters_number):
     centers = {}
 
     while len(clusters_list) > clusters_number:
-        # cluster1, cluster2 = min(
-        #     [(c1, c2) for i, c1 in enumerate(clusters_list) for c2 in clusters_list[:i]],
-        #     key=lambda c: clusters_mean_distance(c[0], c[1]))
 
         min_distance = float('inf')  # Initialize minimum distance to positive infinity
         for i, c1 in enumerate(clusters_list):
