@@ -118,56 +118,6 @@ def otsu_threshold(image):
 
     return binary_image
 
-# def otsu_threshold(image):
-#     """
-#     Apply Otsu's thresholding to a given grayscale image without using OpenCV's built-in functions.
-
-#     Parameters:
-#         image (np.ndarray): The input grayscale image.
-
-#     Returns:
-#         np.ndarray: The binary image obtained after applying Otsu's thresholding.
-#         float: The optimal threshold calculated by Otsu's method.
-#     """
-#     # Ensure the image is grayscale
-#     if len(image.shape) > 2:
-#         raise ValueError("Otsu's thresholding requires a grayscale image.")
-
-#     # Compute the histogram of the grayscale image
-#     hist, _ = np.histogram(image, bins=256, range=(0, 256))
-    
-#     # Normalize the histogram to create a probability distribution
-#     hist_norm = hist / float(np.sum(hist))
-    
-#     # Compute the cumulative sum and cumulative mean of the normalized histogram
-#     cum_sum = np.cumsum(hist_norm)  # Cumulative sum
-#     cum_mean = np.cumsum(hist_norm * np.arange(256))  # Cumulative mean
-    
-#     # Compute the global mean of the image
-#     global_mean = cum_mean[-1]  # Last value of cum_mean
-    
-#     # Compute the between-class variance for each threshold
-#     variance_numerators = global_mean * cum_sum - cum_mean
-#     variance_denominators = cum_sum * (1 - cum_sum)
-#     # Avoid division by zero or very small denominators
-#     variance_denominators[variance_denominators == 0] = 1e-10
-
-#     # between_class_variance = (variance_numerators ** 2) / variance_denominators
-#     # Compute the between-class variance for each threshold
-#     between_class_variance = (cum_sum * (1 - cum_sum)) * (cum_mean[-1] * cum_sum - cum_mean) ** 2
-#     # Compute the between-class variance for each threshold
-    
-
-
-    
-#     # Find the threshold that maximizes the between-class variance
-#     optimal_threshold = np.argmax(between_class_variance)
-    
-#     # Apply the calculated threshold to create a binary image
-#     binary_image = (image >= optimal_threshold).astype(np.uint8) * 255
-    
-#     return binary_image, optimal_threshold
-
 
 def spectral_thresholding(img):
     """
