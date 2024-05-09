@@ -50,6 +50,7 @@ import agglomerative
 # from skimage.filters import sobel
 from scipy.interpolate import RectBivariateSpline
 from threshold import optimal_thresholding, spectral_thresholding,otsu_threshold,local_thresholding
+from FaceDetection import face_detection, draw_rectangle
 
 FORM_CLASS, _ = loadUiType(
     path.join(path.dirname(__file__), "main.ui")
