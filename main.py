@@ -1851,7 +1851,7 @@ class MainApp(QMainWindow, FORM_CLASS):
                 self.display_image(self.image['after_threshold'], self.image_after_threshold)
             if self.threshold_combo_box_2.currentText() == 'Otsu':
                 grey_image = cv2.cvtColor(self.image['threshold'], cv2.COLOR_BGR2GRAY)
-                self.image['after_threshold'],_ = otsu_threshold(grey_image)
+                self.image['after_threshold'] = otsu_threshold(grey_image)
                 self.display_image(self.image['after_threshold'], self.image_after_threshold)
             if self.threshold_combo_box_2.currentText() == 'Spectral':
                 self.image['after_threshold'] = spectral_thresholding(self.image['threshold'])

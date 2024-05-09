@@ -68,16 +68,18 @@ def compute_optimal_threshold(img: np.ndarray, threshold):
     return optimal_threshold
 
 
+
+
+
 def otsu_threshold(image):
     """
-    Apply Otsu's thresholding to a given grayscale image without using OpenCV's built-in functions.
+    Apply Otsu's thresholding to a given grayscale image.
 
     Parameters:
         image (np.ndarray): The input grayscale image.
 
     Returns:
         np.ndarray: The binary image obtained after applying Otsu's thresholding.
-        float: The optimal threshold calculated by Otsu's method.
     """
     # Ensure the image is grayscale
     if len(image.shape) > 2:
@@ -85,31 +87,36 @@ def otsu_threshold(image):
 
     # Compute the histogram of the grayscale image
     hist, _ = np.histogram(image, bins=256, range=(0, 256))
-    
+
     # Normalize the histogram to create a probability distribution
     hist_norm = hist / float(np.sum(hist))
-    
-    # Compute the cumulative sum and cumulative mean of the normalized histogram
+
+    # Compute cumulative sums and cumulative means
     cum_sum = np.cumsum(hist_norm)  # Cumulative sum
     cum_mean = np.cumsum(hist_norm * np.arange(256))  # Cumulative mean
-    
-    # Compute the global mean of the image
-    global_mean = cum_mean[-1]  # Last value of cum_mean
-    
-    # Compute the between-class variance for each threshold
-    variance_numerators = global_mean * cum_sum - cum_mean
-    variance_denominators = cum_sum * (1 - cum_sum)
-    # Avoid division by zero or very small denominators
-    variance_denominators[variance_denominators == 0] = 1e-10
-    between_class_variance = (variance_numerators ** 2) / variance_denominators
-    
+
+    # Compute weights
+    w0 = cum_sum
+    w1 = 1 - w0
+
+    # Add a small epsilon value to avoid division by zero
+    epsilon = 1e-10
+    w0[w0 == 0] = epsilon
+
+    # Compute means
+    mu0 = cum_mean / w0
+    mu1 = (cum_mean[-1] - cum_mean) / w1
+
+    # Compute between-class variance
+    between_class_variance = w0 * w1 * (mu0 - mu1) ** 2
+
     # Find the threshold that maximizes the between-class variance
     optimal_threshold = np.argmax(between_class_variance)
-    
+
     # Apply the calculated threshold to create a binary image
     binary_image = (image >= optimal_threshold).astype(np.uint8) * 255
-    
-    return binary_image, optimal_threshold
+
+    return binary_image
 
 
 def spectral_thresholding(img):
@@ -209,7 +216,7 @@ def local_thresholding(image: np.ndarray, regions, thresholding_function):
             if np.any(region) and np.isfinite(region).all():
                 # Apply thresholding function to the region
                 if thresholding_function == otsu_threshold:
-                    binary_image, _ = thresholding_function(region)
+                    binary_image = thresholding_function(region)
                 else:
                     binary_image = thresholding_function(region)
                 result[y:end_y, x:end_x] = binary_image
