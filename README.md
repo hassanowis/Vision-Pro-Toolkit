@@ -1,4 +1,4 @@
-# Image Processing Desktop Application
+# Computer Vision & Image Processing Desktop Application
 
 ## Description
 
