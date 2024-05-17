@@ -14,14 +14,14 @@ With our desktop application, users can effortlessly load images, apply a wide r
 
    |         Uniform Noise          |         Guassian Noise          |        Salt & Pepper Noise         |
    | :----------------------------: | :-----------------------------: | :--------------------------------: |
-   | img | img | img |
+   | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/edc4b200-7661-44d5-9a39-9093dd790be9) | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/06186323-5356-449c-90a1-6b2654608569) | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/1b7c4065-fa39-476e-9eb7-a7b471c71df4) |
 
 - **Image Filtering:**
   - Apply various filters including Average, Gaussian, and Median filters to enhance image quality and reduce noise.
     
    |         Average Filter          |         Gaussian Filter          |         Median Filter          |
    | :-----------------------------: | :------------------------------: | :----------------------------: |
-   |  |  |  |
+   |![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/628bfe27-0a13-481f-8c66-cb6691f95ab2) | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/aac63a83-8945-4a3a-968d-0a4b142b503f) | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/e84e2022-6643-43f7-999d-d48840e691e7) |
 
 - **Histogram Visualization and Equalization:**
   - Visualize histograms and distribution curves of images to understand their pixel intensity distribution.
@@ -29,14 +29,14 @@ With our desktop application, users can effortlessly load images, apply a wide r
 
    | Histogram | Normalization | Equalization |  
    | :----------------------------: | :-----------------------------: | :-----------------------------: |
-   |  |  | |
+   | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/e8d448b1-568b-45da-8f08-10e3e6227c95) | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/2e65594b-dbbd-49e2-a39d-d1c8b7ba399e) | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/56b805a4-a3f1-4c2b-8541-560d7b74eacd) |
 
 - **Thresholding Techniques:**
   - Apply various thresholding techniques, including Global and Local Thresholding, to segment images and extract important features.
  
    | Local | Global |  
    | :----------------------------: | :-----------------------------: |
-   | ![](Results/local-thresh.png) | ![](Results/global-thresh.png) |
+   | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/6dfbd4b6-fd28-4283-8225-2994f72b5c22) | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/6fd38aeb-7e1e-48c5-807c-73335d4d2241) |
 
 - **Frequency Domain Filters:**
   - Apply frequency domain filters such as Low Pass and High Pass filters to manipulate image frequency components for image enhancement and noise reduction.
@@ -44,7 +44,7 @@ With our desktop application, users can effortlessly load images, apply a wide r
     
    | High pass | Low pass |  
    | :----------------------------: | :-----------------------------: |
-   | ![](Results/high-pass.png) | ![](Results/low-pass.png) |
+   | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/1c1f3014-25f1-4404-8417-86c475d6f219) ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/42069143-8af4-41a1-bbd2-9793ec1d119c) | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/3ca9baf9-19e1-42ea-a427-975f5bfd435d) ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/abe2cfb2-aebd-4aa3-a2c1-14a119fa46c0) |
 
     
  
@@ -54,7 +54,7 @@ With our desktop application, users can effortlessly load images, apply a wide r
     
    | Sobel | Roberts | Perwitt | Canny |
    | :----------------------------: | :-----------------------------: | :--------------------------------: | :--------------------------------: |
-   |  |  | |  |
+   | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/1774fb92-4e32-4013-8a8d-a7aed4d70e87) | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/51c4a02a-ffa2-44f2-acf1-7b4a38373051) | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/36b10936-65c3-4b4f-8510-80500b18fb05) | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/432bdf73-371f-4080-81f5-2fc66e569d46) |
 
 
 - **Hough Transform:**
@@ -62,7 +62,7 @@ With our desktop application, users can effortlessly load images, apply a wide r
  
    | Line | Circle | Ellipse |  
    | :----------------------------: | :-----------------------------: | :-----------------------------: |
-   |  |  |  |
+   | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/5bf1b031-81d2-4167-a7f8-8b9363e36514) | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/95fe8821-aab6-4572-af49-a39c4c29e17c) |  |
 
 - **Active Contour:**
   - Use active contour models (also known as snakes) to detect and track object boundaries in images.
@@ -72,7 +72,7 @@ With our desktop application, users can effortlessly load images, apply a wide r
 
    | Example 1 | Example 2 |  
    | :----------------------------: | :-----------------------------: |
-   | | |
+   | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/6324d38b-2843-4ef6-8e74-e626629b82f7) ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/0693d3c2-1252-467d-baa0-8c07b2880605) | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/17241429-5b66-4b14-bcea-826f82fc81df)  ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/ce155f28-8c4c-42ca-900b-9598d15177c0) |
 
 - **Feature Detection:**
   - Detect image features using methods like Harris Corner Detector and Lambda Corner Detector for point feature extraction.
@@ -80,13 +80,13 @@ With our desktop application, users can effortlessly load images, apply a wide r
     
    | Harris | Lambda |  
    | :----------------------------: | :-----------------------------: |
-   |  | |
+   | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/af4b4b94-d2c9-4533-8ce2-7895b57261ad) | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/68c0469d-bd69-413e-95aa-dfba6517ff63) |
 
 - **Feature Matching:**
   
-   | Square Sum of Differences method | Cross-Correlation Method |  
+   | Square Sum of Differences method | Cross-Correlation Method |  SIFT |
    | :----------------------------: | :-----------------------------: |
-   | | |
+   |![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/bffb8574-5dfa-43ca-9cd6-d1e848b29b35) | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/52cd4deb-fe08-48d1-9236-8f6d95828e5a) | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/68cf3455-c692-466a-b856-160bc951988e) |
 
   
 - **SIFT Descriptors:**
@@ -117,7 +117,8 @@ With our desktop application, users can effortlessly load images, apply a wide r
 
     | Agglomerative Segmentation |         Region Growing          |
     | :------------------------: | :-----------------------------: |
-    |  img  | img |
+    |  ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/999e098f-f480-4499-8689-273ab261264c) | ![image](https://github.com/AliBadran716/Image-Processing-Kit/assets/102072821/47f60b3a-f4c0-4dce-b9e9-46e0dedda685)
+ |
 
 ## Summary
 
