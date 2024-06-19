@@ -1,7 +1,7 @@
 # Computer Vision & Image Processing Desktop Application
 
 ## Description
-Welcome to Visio-Toolkit! This  desktop application offers a comprehensive set of tools and features for performing various image processing and computer vision tasks, making it an indispensable tool for professionals and enthusiasts alike. Whether you're a seasoned image processing expert or just getting started, our app provides an intuitive interface and powerful functionality to meet your needs.
+Welcome to Vision-Pro-Toolkit! This  desktop application offers a comprehensive set of tools and features for performing various image processing and computer vision tasks, making it an indispensable tool for professionals and enthusiasts alike. Whether you're a seasoned image processing expert or just getting started, our app provides an intuitive interface and powerful functionality to meet your needs.
 
 With Visio-Toolkit, users can effortlessly load images, apply a wide range of image processing and computer vision techniques, visualize the results in real-time, and save the processed images with ease. From basic operations like converting images to grayscale and binary formats to advanced features such as edge detection and object recognition, our app empowers users to explore and manipulate images in creative and innovative ways.
 
