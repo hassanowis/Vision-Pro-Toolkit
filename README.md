@@ -162,6 +162,12 @@ To run the Image Processing Desktop Application, follow these simple steps:
     <br />
     <sub><b>Osama Badawi</b></sub></a>
     </td>
+    <td align="center">
+    <a href="https://github.com/hassanowis" target="_black">
+    <img src="https://avatars.githubusercontent.com/u/102428122?v=4" width="150px;" alt="Hassan Hussein"/>
+    <br />
+    <sub><b>Hassan Hussein</b></sub></a>
+    </td>
       </tr>
  </table>
 
